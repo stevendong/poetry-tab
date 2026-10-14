@@ -10,4 +10,4 @@
 
 运行时仅使用本地文件和 `chrome.storage.local`。诗句为古典原文，解释由项目编写，逐句插画由内置 imagegen 工具生成；提示词记录在 `extension/assets/art/prompts.json`。
 
-当前代码留在本地，尚未上传 GitHub。
+源码仓库：[stevendong/poetry-tab](https://github.com/stevendong/poetry-tab)。
