@@ -2,6 +2,7 @@ import { readFile, mkdir, cp, rm, writeFile, readdir } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
+import { basename } from "node:path";
 import { createZip } from "./zip.mjs";
 const root = fileURLToPath(new URL("../", import.meta.url));
 execFileSync(process.execPath, [root + "scripts/check.mjs"], {
@@ -13,7 +14,11 @@ const { version } = JSON.parse(
 const unpacked = root + "dist/poetry-tab";
 await mkdir(root + "dist", { recursive: true });
 await rm(unpacked, { recursive: true, force: true });
-await cp(root + "extension", unpacked, { recursive: true });
+await cp(root + "extension", unpacked, {
+  recursive: true,
+  filter: (source) => basename(source) !== ".DS_Store",
+});
+await cp(root + "LICENSE", unpacked + "/LICENSE");
 const archive = root + `dist/poetry-tab-v${version}.zip`;
 await rm(archive, { force: true });
 const entries = [];

@@ -2,6 +2,7 @@
   "name": "yijian-poetry-tab",
   "version": "0.2.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "description": "一笺 — 随时令而来的诗意新标签页",
   "scripts": {
