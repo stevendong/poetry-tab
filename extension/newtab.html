@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="script-src 'self'; object-src 'none'; connect-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'none'"
+    />
+    <title>一笺 · 诗意新标签页</title>
+    <link rel="icon" href="assets/icons/icon48.png" />
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="app.js"></script>
+  </head>
+  <body>
+    <svg
+      class="icon-definitions"
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <symbol id="i-heart" viewBox="0 0 24 24">
+          <path
+            d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"
+          />
+        </symbol>
+        <symbol id="i-refresh" viewBox="0 0 24 24">
+          <path d="M20 7v5h-5M4 17v-5h5" />
+          <path d="M6.1 7a7 7 0 0 1 11.6-2L20 8M4 16l2.3 3A7 7 0 0 0 18 17" />
+        </symbol>
+        <symbol id="i-book" viewBox="0 0 24 24">
+          <path
+            d="M12 5v16M12 5C8 2 4 3 2 4v15c3-1 6-1 10 2 4-3 7-3 10-2V4c-2-1-6-2-10 1Z"
+          />
+        </symbol>
+        <symbol id="i-library" viewBox="0 0 24 24">
+          <path d="M4 4v16M9 4v16M14 4v16M18 4l4 15M2 20h14" />
+        </symbol>
+        <symbol id="i-settings" viewBox="0 0 24 24">
+          <path d="M4 7h16M4 17h16" />
+          <circle cx="9" cy="7" r="3" />
+          <circle cx="16" cy="17" r="3" />
+        </symbol>
+        <symbol id="i-close" viewBox="0 0 24 24">
+          <path d="m6 6 12 12M18 6 6 18" />
+        </symbol>
+        <symbol id="i-arrow" viewBox="0 0 24 24">
+          <path d="M5 12h14m-5-5 5 5-5 5" />
+        </symbol>
+      </defs>
+    </svg>
+    <div class="landscape" aria-hidden="true">
+      <img id="art" alt="" />
+      <div class="veil"></div>
+      <div class="grain"></div>
+    </div>
+    <div class="page">
+      <header class="masthead">
+        <div class="brand">
+          <span class="seal" aria-hidden="true">笺</span>
+          <div>
+            <span class="brand-name">一笺</span
+            ><span class="brand-subtitle">把日子，过成诗</span>
+          </div>
+        </div>
+        <div class="almanac">
+          <span id="date-label"></span
+          ><span class="almanac-line"
+            ><span id="season-label"></span><span class="dot">·</span
+            ><span
+              id="term-label"
+              title="按太阳黄经近似计算，中国传统节气"
+            ></span
+          ></span>
+        </div>
+      </header>
+      <main class="poetry" id="poetry" aria-busy="true">
+        <div class="eyebrow">
+          <span class="rule"></span><span id="reason">正在拾取此刻的诗意</span>
+        </div>
+        <h1 id="verse"><span>一笺诗意</span><span>与时光相遇</span></h1>
+        <p class="byline" id="byline"></p>
+        <p class="inline-meaning" id="inline-meaning" hidden></p>
+        <button class="reading-link" id="read-button" type="button">
+          读懂这一句 <svg class="icon"><use href="#i-arrow" /></svg>
+        </button>
+      </main>
+      <footer class="footer">
+        <div class="clock-wrap" id="clock-wrap">
+          <time id="clock" class="clock"></time
+          ><span id="clock-caption">片刻闲暇，也有山川</span>
+        </div>
+        <nav class="tools" aria-label="诗句操作">
+          <button
+            class="tool"
+            id="next-button"
+            title="换一句（空格键）"
+            aria-label="换一句"
+            type="button"
+          >
+            <svg class="icon"><use href="#i-refresh" /></svg><span>换一句</span>
+          </button>
+          <button
+            class="tool"
+            id="favorite-button"
+            title="收藏这句"
+            aria-label="收藏这句"
+            aria-pressed="false"
+            type="button"
+          >
+            <svg class="icon"><use href="#i-heart" /></svg
+            ><span id="favorite-label">收藏</span>
+          </button>
+          <span class="tool-divider" aria-hidden="true"></span>
+          <button
+            class="tool icon-only"
+            id="library-button"
+            title="收藏册"
+            aria-label="打开收藏册"
+            type="button"
+          >
+            <svg class="icon"><use href="#i-library" /></svg>
+          </button>
+          <button
+            class="tool icon-only"
+            id="settings-button"
+            title="设置"
+            aria-label="打开设置"
+            type="button"
+          >
+            <svg class="icon"><use href="#i-settings" /></svg>
+          </button>
+        </nav>
+      </footer>
+    </div>
+    <p id="toast" class="toast" role="status" aria-live="polite" hidden></p>
+    <dialog
+      id="reading-dialog"
+      class="sheet reading-sheet"
+      aria-labelledby="reading-title"
+    >
+      <div class="sheet-top">
+        <span class="sheet-kicker">一字一句，皆有来处</span
+        ><button class="close" data-close aria-label="关闭解读" type="button">
+          <svg class="icon"><use href="#i-close" /></svg>
+        </button>
+      </div>
+      <h2 id="reading-title"></h2>
+      <p class="sheet-byline" id="reading-byline"></p>
+      <div class="reading-verse" id="reading-verse"></div>
+      <section>
+        <h3>句意</h3>
+        <p id="meaning"></p>
+      </section>
+      <section>
+        <h3>意境</h3>
+        <p id="appreciation"></p>
+      </section>
+      <section class="original">
+        <h3 id="fulltext-label">原文</h3>
+        <p id="fulltext"></p>
+      </section>
+      <div class="sheet-foot">
+        <span>插画为 AI 意境创作</span
+        ><a id="source-link" target="_blank" rel="noopener noreferrer"
+          >查阅原文出处 ↗</a
+        >
+      </div>
+    </dialog>
+    <dialog id="library-dialog" class="sheet" aria-labelledby="library-title">
+      <div class="sheet-top">
+        <span class="sheet-kicker">把喜欢的句子，留在身边</span
+        ><button class="close" data-close aria-label="关闭收藏册" type="button">
+          <svg class="icon"><use href="#i-close" /></svg>
+        </button>
+      </div>
+      <h2 id="library-title">收藏册</h2>
+      <p class="sheet-byline" id="library-count"></p>
+      <div id="library-list" class="library-list"></div>
+      <p class="privacy-note">收藏保存在这台浏览器中，离线也能翻阅。</p>
+    </dialog>
+    <dialog
+      id="settings-dialog"
+      class="sheet settings-sheet"
+      aria-labelledby="settings-title"
+    >
+      <div class="sheet-top">
+        <span class="sheet-kicker">让诗意，适合你的日常</span
+        ><button class="close" data-close aria-label="关闭设置" type="button">
+          <svg class="icon"><use href="#i-close" /></svg>
+        </button>
+      </div>
+      <h2 id="settings-title">偏好设置</h2>
+      <form id="settings-form">
+        <label class="setting-row" for="hemisphere"
+          ><span
+            ><strong>所在半球</strong
+            ><small>让四季与你所在的地方相合</small></span
+          ><select id="hemisphere" name="hemisphere">
+            <option value="north">北半球</option>
+            <option value="south">南半球</option>
+          </select></label
+        >
+        <label class="setting-row" for="show-clock"
+          ><span><strong>显示时间</strong><small>留一点空间给当下</small></span
+          ><input
+            id="show-clock"
+            name="showClock"
+            type="checkbox"
+            class="switch"
+        /></label>
+        <label class="setting-row" for="show-meaning"
+          ><span
+            ><strong>直接显示句意</strong
+            ><small>在诗句下方显示简短解释</small></span
+          ><input
+            id="show-meaning"
+            name="showMeaning"
+            type="checkbox"
+            class="switch"
+        /></label>
+        <label class="setting-row" for="text-size"
+          ><span><strong>诗句字号</strong><small>读起来更舒适</small></span
+          ><select id="text-size" name="textSize">
+            <option value="normal">标准</option>
+            <option value="large">较大</option>
+          </select></label
+        >
+        <label class="setting-row shade-row" for="shade"
+          ><span
+            ><strong>背景遮罩</strong
+            ><small>加深遮罩，让文字更清晰</small></span
+          ><input
+            id="shade"
+            name="shade"
+            type="range"
+            min="15"
+            max="70"
+            step="5"
+        /></label>
+        <p class="privacy-note">
+          设置自动保存。按本机时区选句；四季以立春、立夏、立秋、立冬划分，南半球相反。节气名称沿用中国传统，交界时刻采用近似计算。
+        </p>
+        <p class="privacy-note">
+          内置 17 组诗词、古文与 AI 插画。无需联网、账号或定位。按空格换一句，按
+          Esc 关闭面板。
+        </p>
+      </form>
+    </dialog>
+    <noscript>请启用 JavaScript 以展示与此刻相应的诗词。</noscript>
+  </body>
+</html>

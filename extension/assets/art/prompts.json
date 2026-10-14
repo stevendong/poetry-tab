@@ -1,0 +1,121 @@
+[
+  {
+    "id": "spring-dawn",
+    "prompt": "Use case: historical-scene. Asset type: full-screen landscape illustration for a Chinese poetry Chrome new tab extension, 1536x1024 landscape. Illustrate the meaning of Meng Haoran's poem line 春眠不觉晓，处处闻啼鸟: quiet spring dawn with pale mist, flowering pear branches, small songbirds, a traditional Chinese courtyard seen from an open window. Refined contemporary Chinese ink and watercolor on textured paper, soft celadon green and warm cream, tranquil and immersive, atmospheric depth, no lettering, no calligraphy, no watermark. Keep center and left-middle spacious with low detail for overlay text. Artwork only, edge to edge.",
+    "tool": "image_gen built-in",
+    "date": "2026-10-14",
+    "file": "spring-dawn.webp"
+  },
+  {
+    "id": "spring-river",
+    "prompt": "Use case: historical-scene. Asset type: full-screen landscape illustration for a Chinese poetry new tab extension, 1536x1024 landscape. Illustrate this classical Chinese line: 竹外桃花三两枝，春江水暖鸭先知. Scene: spring riverside with bamboo, three pink peach blossoms, two ducks on warm jade water, distant hazy hills. Style: refined contemporary Chinese ink and watercolor on subtly textured paper, beautiful atmospheric depth and quiet immersive composition. Palette: soft peach and celadon. Keep left middle and center low-detail with breathable negative space for overlay text. Artwork only, edge to edge. No lettering, calligraphy, typography, frames, UI, watermark or modern buildings.",
+    "tool": "image_gen built-in",
+    "date": "2026-10-14",
+    "file": "spring-river.webp"
+  },
+  {
+    "id": "spring-moon",
+    "prompt": "Use case: historical-scene. Asset type: full-screen landscape illustration for a Chinese poetry new tab extension, 1536x1024 landscape. Illustrate this classical Chinese line: 春江潮水连海平，海上明月共潮生. Scene: a broad spring river merging into a calm sea, a full moon rising with the luminous tide. Style: refined contemporary Chinese ink and watercolor on subtly textured paper, beautiful atmospheric depth and quiet immersive composition. Palette: ink blue, silver and dusty lavender. Keep left middle and center low-detail with breathable negative space for overlay text. Artwork only, edge to edge. No lettering, calligraphy, typography, frames, UI, watermark or modern buildings.",
+    "tool": "image_gen built-in",
+    "date": "2026-10-14",
+    "file": "spring-moon.webp"
+  },
+  {
+    "id": "summer-field",
+    "prompt": "Use case: historical-scene. Asset type: full-screen landscape illustration for a Chinese poetry new tab extension, 1536x1024 landscape. Illustrate this classical Chinese line: 稻花香里说丰年，听取蛙声一片. Scene: fragrant rice fields on a summer night, small frogs by water, gentle distant village lights, silver stars. Style: refined contemporary Chinese ink and watercolor on subtly textured paper, beautiful atmospheric depth and quiet immersive composition. Palette: deep teal, silver and muted gold. Keep left middle and center low-detail with breathable negative space for overlay text. Artwork only, edge to edge. No lettering, calligraphy, typography, frames, UI, watermark or modern buildings.",
+    "tool": "image_gen built-in",
+    "date": "2026-10-14",
+    "file": "summer-field.webp"
+  },
+  {
+    "id": "summer-lotus",
+    "prompt": "Use case: historical-scene. Asset type: full-screen landscape illustration for a Chinese poetry new tab extension, 1536x1024 landscape. Illustrate this classical Chinese line: 接天莲叶无穷碧，映日荷花别样红. Scene: vast green lotus leaves to the horizon, blooming pink lotuses glowing in morning sun. Style: refined contemporary Chinese ink and watercolor on subtly textured paper, beautiful atmospheric depth and quiet immersive composition. Palette: jade green, pale rose, golden light. Keep left middle and center low-detail with breathable negative space for overlay text. Artwork only, edge to edge. No lettering, calligraphy, typography, frames, UI, watermark or modern buildings.",
+    "tool": "image_gen built-in",
+    "date": "2026-10-14",
+    "file": "summer-lotus.webp"
+  },
+  {
+    "id": "autumn-fruit",
+    "prompt": "Use case: historical-scene. Asset type: full-screen landscape illustration for a Chinese poetry new tab extension, 1536x1024 landscape. Illustrate this classical Chinese line: 一年好景君须记，最是橙黄橘绿时. Scene: autumn garden with orange-gold citrus fruits among green leaves, faded lotus in a distant pond, gentle morning air. Style: refined contemporary Chinese ink and watercolor on subtly textured paper, beautiful atmospheric depth and quiet immersive composition. Palette: warm amber, sage and cream. Keep left middle and center low-detail with breathable negative space for overlay text. Artwork only, edge to edge. No lettering, calligraphy, typography, frames, UI, watermark or modern buildings.",
+    "tool": "image_gen built-in",
+    "date": "2026-10-14",
+    "file": "autumn-fruit.webp"
+  },
+  {
+    "id": "summer-pond",
+    "prompt": "Use case: historical-scene. Asset type: full-screen landscape illustration for a Chinese poetry new tab extension, 1536x1024 landscape. Illustrate this classical Chinese line: 小荷才露尖尖角，早有蜻蜓立上头. Scene: close view of a young pointed lotus leaf with a delicate dragonfly, clear still garden pond with water reflections. Style: refined contemporary Chinese ink and watercolor on subtly textured paper, beautiful atmospheric depth and quiet immersive composition. Palette: soft emerald, cream and pale turquoise. Keep left middle and center low-detail with breathable negative space for overlay text. Artwork only, edge to edge. No lettering, calligraphy, typography, frames, UI, watermark or modern buildings.",
+    "tool": "image_gen built-in",
+    "date": "2026-10-14",
+    "file": "summer-pond.webp"
+  },
+  {
+    "id": "autumn-maple",
+    "prompt": "Use case: historical-scene. Asset type: full-screen landscape illustration for a Chinese poetry new tab extension, 1536x1024 landscape. Illustrate this classical Chinese line: 停车坐爱枫林晚，霜叶红于二月花. Scene: winding stone mountain path through brilliant crimson maple trees in late autumn, distant white clouds. Style: refined contemporary Chinese ink and watercolor on subtly textured paper, beautiful atmospheric depth and quiet immersive composition. Palette: burnt red, golden ochre and blue-gray. Keep left middle and center low-detail with breathable negative space for overlay text. Artwork only, edge to edge. No lettering, calligraphy, typography, frames, UI, watermark or modern buildings.",
+    "tool": "image_gen built-in",
+    "date": "2026-10-14",
+    "file": "autumn-maple.webp"
+  },
+  {
+    "id": "winter-blossom",
+    "prompt": "Use case: historical-scene. Asset type: full-screen landscape illustration for a Chinese poetry new tab extension, 1536x1024 landscape. Illustrate this classical Chinese line: 忽如一夜春风来，千树万树梨花开. Scene: countless winter trees laden with fresh white snow resembling pear blossoms after an overnight blizzard. Style: refined contemporary Chinese ink and watercolor on subtly textured paper, beautiful atmospheric depth and quiet immersive composition. Palette: soft blue gray, white and warm cream. Keep left middle and center low-detail with breathable negative space for overlay text. Artwork only, edge to edge. No lettering, calligraphy, typography, frames, UI, watermark or modern buildings.",
+    "tool": "image_gen built-in",
+    "date": "2026-10-14",
+    "file": "winter-blossom.webp"
+  },
+  {
+    "id": "winter-river",
+    "prompt": "Use case: historical-scene. Asset type: full-screen landscape illustration for a Chinese poetry new tab extension, 1536x1024 landscape. Illustrate this classical Chinese line: 孤舟蓑笠翁，独钓寒江雪. Scene: one very small lone fisherman wearing ancient straw cape and hat in a tiny boat on a wide snowy river surrounded by silent mountains. Style: refined contemporary Chinese ink and watercolor on subtly textured paper, beautiful atmospheric depth and quiet immersive composition. Palette: misty ink gray, silver and pale blue. Keep left middle and center low-detail with breathable negative space for overlay text. Artwork only, edge to edge. No lettering, calligraphy, typography, frames, UI, watermark or modern buildings.",
+    "tool": "image_gen built-in",
+    "date": "2026-10-14",
+    "file": "winter-river.webp"
+  },
+  {
+    "id": "clouds",
+    "prompt": "Use case: historical-scene. Asset type: full-screen landscape illustration for a Chinese poetry new tab extension, 1536x1024 landscape. Illustrate this classical Chinese line: 行到水穷处，坐看云起时. Scene: small ancient traveler seated beside the end of a mountain stream watching clouds rise among layered mountains. Style: refined contemporary Chinese ink and watercolor on subtly textured paper, beautiful atmospheric depth and quiet immersive composition. Palette: misty jade, stone gray and warm paper. Keep left middle and center low-detail with breathable negative space for overlay text. Artwork only, edge to edge. No lettering, calligraphy, typography, frames, UI, watermark or modern buildings.",
+    "tool": "image_gen built-in",
+    "date": "2026-10-14",
+    "file": "clouds.webp"
+  },
+  {
+    "id": "autumn-stream",
+    "prompt": "Use case: historical-scene. Asset type: full-screen landscape illustration for a Chinese poetry new tab extension, 1536x1024 landscape. Illustrate this classical Chinese line: 明月松间照，清泉石上流. Scene: moonlight through pine branches in an autumn mountain valley, a clear stream running over smooth pale rocks. Style: refined contemporary Chinese ink and watercolor on subtly textured paper, beautiful atmospheric depth and quiet immersive composition. Palette: midnight indigo, muted jade, silver moonlight. Keep left middle and center low-detail with breathable negative space for overlay text. Artwork only, edge to edge. No lettering, calligraphy, typography, frames, UI, watermark or modern buildings.",
+    "tool": "image_gen built-in",
+    "date": "2026-10-14",
+    "file": "autumn-stream.webp"
+  },
+  {
+    "id": "winter-tea",
+    "prompt": "Use case: historical-scene. Asset type: full-screen landscape illustration for a Chinese poetry new tab extension, 1536x1024 landscape. Illustrate this classical Chinese line: 晚来天欲雪，能饮一杯无. Scene: intimate traditional Chinese room with a small red clay stove, two plain wine cups, snow gathering beyond an open window at dusk. Style: refined contemporary Chinese ink and watercolor on subtly textured paper, beautiful atmospheric depth and quiet immersive composition. Palette: warm rust, soft amber and muted blue. Keep left middle and center low-detail with breathable negative space for overlay text. Artwork only, edge to edge. No lettering, calligraphy, typography, frames, UI, watermark or modern buildings.",
+    "tool": "image_gen built-in",
+    "date": "2026-10-14",
+    "file": "winter-tea.webp"
+  },
+  {
+    "id": "desert",
+    "prompt": "Use case: historical-scene. Asset type: full-screen landscape illustration for a Chinese poetry new tab extension, 1536x1024 landscape. Illustrate this classical Chinese line: 大漠孤烟直，长河落日圆. Scene: vast desert with a single thin straight smoke plume, long river curving through sand, round sunset low on horizon. Style: refined contemporary Chinese ink and watercolor on subtly textured paper, beautiful atmospheric depth and quiet immersive composition. Palette: sand gold, muted terracotta and dusky lavender. Keep left middle and center low-detail with breathable negative space for overlay text. Artwork only, edge to edge. No lettering, calligraphy, typography, frames, UI, watermark or modern buildings.",
+    "tool": "image_gen built-in",
+    "date": "2026-10-14",
+    "file": "desert.webp"
+  },
+  {
+    "id": "red-cliff",
+    "prompt": "Use case: historical-scene. Asset type: full-screen landscape illustration for a Chinese poetry new tab extension, 1536x1024 landscape. Illustrate this classical Chinese line: 清风徐来，水波不兴. Scene: a quiet broad river at night under the moon near a red cliff, small ancient wooden boat, a gentle breeze and unruffled water. Style: refined contemporary Chinese ink and watercolor on subtly textured paper, beautiful atmospheric depth and quiet immersive composition. Palette: deep slate blue, silver and muted rust. Keep left middle and center low-detail with breathable negative space for overlay text. Artwork only, edge to edge. No lettering, calligraphy, typography, frames, UI, watermark or modern buildings.",
+    "tool": "image_gen built-in",
+    "date": "2026-10-14",
+    "file": "red-cliff.webp"
+  },
+  {
+    "id": "forest",
+    "prompt": "Use case: historical-scene. Asset type: full-screen landscape illustration for a Chinese poetry new tab extension, 1536x1024 landscape. Illustrate this classical Chinese line: 野芳发而幽香，佳木秀而繁阴. Scene: wild forest flowers by a winding trail, lush tall trees casting cool shade, distant traditional pavilion. Style: refined contemporary Chinese ink and watercolor on subtly textured paper, beautiful atmospheric depth and quiet immersive composition. Palette: moss green, soft cream and muted yellow. Keep left middle and center low-detail with breathable negative space for overlay text. Artwork only, edge to edge. No lettering, calligraphy, typography, frames, UI, watermark or modern buildings.",
+    "tool": "image_gen built-in",
+    "date": "2026-10-14",
+    "file": "forest.webp"
+  },
+  {
+    "id": "homesick-moon",
+    "prompt": "Use case: historical-scene. Asset type: full-screen landscape illustration for a Chinese poetry new tab extension, 1536x1024 landscape. Illustrate this classical Chinese line: 举头望明月，低头思故乡. Scene: ancient Chinese room with an open wooden window, moonlight falling across floor like white frost, distant moon and a solitary small traveler silhouette. Style: refined contemporary Chinese ink and watercolor on subtly textured paper, beautiful atmospheric depth and quiet immersive composition. Palette: dusty indigo, ivory and gray. Keep left middle and center low-detail with breathable negative space for overlay text. Artwork only, edge to edge. No lettering, calligraphy, typography, frames, UI, watermark or modern buildings.",
+    "tool": "image_gen built-in",
+    "date": "2026-10-14",
+    "file": "homesick-moon.webp"
+  }
+]
