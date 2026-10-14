@@ -113,6 +113,9 @@ try {
   const worker =
     browser.serviceWorkers()[0] ||
     (await browser.waitForEvent("serviceworker"));
+  await worker.evaluate(() =>
+    chrome.storage.local.set({ settings: { language: "zh" } }),
+  );
   const page = await browser.newPage();
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => {
@@ -178,9 +181,13 @@ try {
   );
   await assertDefaultBackground(page);
   await page.evaluate(() => document.fonts.ready);
-  await page.locator("#poetry").evaluate((element) =>
-    Promise.all(element.getAnimations().map((animation) => animation.finished)),
-  );
+  await page
+    .locator("#poetry")
+    .evaluate((element) =>
+      Promise.all(
+        element.getAnimations().map((animation) => animation.finished),
+      ),
+    );
   await page.screenshot({
     path: root + "artifacts/online-default-background.png",
   });

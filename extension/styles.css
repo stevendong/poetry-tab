@@ -419,6 +419,7 @@ h1 span {
   color: #455848;
   font-size: 13px;
 }
+.custom-select,
 .calendar-toolbar .custom-select {
   display: inline-flex;
   align-items: center;
@@ -428,17 +429,49 @@ h1 span {
   border-color: #dddccd;
   border-radius: 9px;
   background: #f2f1e7;
+  color: #455848;
+  font-size: 13px;
+  min-height: 36px;
+  border: 1px solid #dddccd;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
-.calendar-toolbar .custom-select[aria-expanded="true"] {
+.custom-select[aria-expanded="true"] {
   background: #e9eddf;
   border-color: #8b9c7b;
 }
 .custom-select:focus-visible {
   outline-color: #9cad86;
   outline-offset: 3px;
+}
+.custom-select:hover {
+  background: #eeeee3;
+}
+.setting-row .custom-select {
+  flex-shrink: 0;
+  max-width: 150px;
+  font-size: 12px;
+}
+html:lang(en) .brand-name,
+html:lang(en) .brand-subtitle,
+html:lang(en) .almanac,
+html:lang(en) .clock-wrap > span,
+html:lang(en) .sheet-byline,
+html:lang(en) .sheet-kicker {
+  letter-spacing: 0.02em;
+}
+html:lang(en) .calendar-detail p {
+  line-height: 1.6;
+}
+html:lang(en) .clock-wrap {
+  min-width: 0;
+}
+html:lang(en) .clock-wrap > span {
+  max-width: 140px;
+  line-height: 1.5;
 }
 .custom-select-arrow {
   width: 6px;
@@ -461,7 +494,9 @@ h1 span {
   border-radius: 12px;
   background: #fbf8ef;
   color: #455848;
-  box-shadow: 0 12px 32px #273c302b, 0 2px 6px #273c300d;
+  box-shadow:
+    0 12px 32px #273c302b,
+    0 2px 6px #273c300d;
   color-scheme: light;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -480,7 +515,9 @@ h1 span {
   padding: 8px 4px;
   border: 1px solid transparent;
   border-radius: 7px;
-  font: 12px/1.4 system-ui, sans-serif;
+  font:
+    12px/1.4 system-ui,
+    sans-serif;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
 }

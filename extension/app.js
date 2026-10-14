@@ -1,10 +1,19 @@
 import { QUOTES } from "./quotes.js";
-import { getContext, SEASONS, selectQuote, matchingReason } from "./context.js";
+import { getContext, selectQuote } from "./context.js";
 import { storage, sanitizeSettings, DEFAULT_SETTINGS } from "./storage.js";
 import { createStateController } from "./state.js";
 import { resolveFavorite } from "./online.js";
 import { solarTermOnDate } from "./calendar.js";
 import { initCalendar } from "./calendar-view.js";
+import { createSelect } from "./custom-select.js";
+import {
+  t,
+  setLanguage,
+  getLanguage,
+  locale,
+  translateDocument,
+  termLabel,
+} from "./i18n.js";
 const previewController = createStateController(storage, {
   allowOnline: false,
 });
@@ -22,10 +31,15 @@ let interactionVersion = 0;
 let pendingSelection = false;
 let toastTimer;
 let settingsWrites = Promise.resolve();
+let currentSelection = {};
+let currentFromLibrary = false;
+let waitingForOnline = false;
+let toastKey;
 
-function toast(message) {
+function toast(key) {
   clearTimeout(toastTimer);
-  $("toast").textContent = message;
+  toastKey = key;
+  $("toast").textContent = t(key);
   $("toast").hidden = false;
   toastTimer = setTimeout(() => {
     $("toast").hidden = true;
@@ -36,7 +50,7 @@ async function request(message) {
   if (globalThis.chrome?.runtime?.id) {
     const result = await chrome.runtime.sendMessage(message);
     if (result?.error) throw new Error(result.error);
-    if (!result?.data) throw new Error("未收到扩展响应");
+    if (!result?.data) throw new Error(t("noResponse"));
     return result.data;
   }
   const act = () => previewController.handle(message);
@@ -46,27 +60,32 @@ async function request(message) {
 function updateClock() {
   const now = new Date();
   context = getContext(now, settings.hemisphere);
-  $("clock").textContent = new Intl.DateTimeFormat("zh-CN", {
+  $("clock").textContent = new Intl.DateTimeFormat(locale(), {
     hour: "2-digit",
     minute: "2-digit",
     hourCycle: "h23",
   }).format(now);
   $("clock").dateTime = now.toISOString();
-  $("date-label").textContent = new Intl.DateTimeFormat("zh-CN", {
-    month: "long",
+  $("date-label").textContent = new Intl.DateTimeFormat(locale(), {
+    month: getLanguage() === "en" ? "short" : "long",
     day: "numeric",
-    weekday: "long",
+    weekday: getLanguage() === "en" ? "short" : "long",
   }).format(now);
   $("season-label").textContent =
-    `${SEASONS[context.season]}日${settings.hemisphere === "south" ? " · 南半球" : ""}`;
+    t(context.season) +
+    (settings.hemisphere === "south" ? t("southSuffix") : "");
   const term = solarTermOnDate(now);
-  $("term-label").textContent = term;
+  $("term-label").textContent = termLabel(term);
   $("term-label").hidden = !term;
   $("term-dot").hidden = !term;
   refreshCalendar();
 }
 
 function applySettings() {
+  setLanguage(settings.language);
+  translateDocument();
+  languagePicker.setLabels([t("autoLanguage"), "中文", "English"]);
+  languagePicker.setValue(settings.language);
   document.documentElement.style.setProperty(
     "--shade",
     String(settings.shade / 100),
@@ -80,39 +99,44 @@ function applySettings() {
   $("show-meaning").checked = settings.showMeaning;
   $("text-size").value = settings.textSize;
   $("shade").value = settings.shade;
+  if (current) updateQuoteText();
+  if ($("library-dialog").open) populateLibrary();
+  if (toastKey && !$("toast").hidden) $("toast").textContent = t(toastKey);
   updateClock();
 }
 
 function updateFavorite() {
   const saved = current && favorites.includes(current.id);
   $("favorite-button").setAttribute("aria-pressed", String(Boolean(saved)));
-  $("favorite-button").setAttribute(
-    "aria-label",
-    saved ? "取消收藏这句" : "收藏这句",
-  );
-  $("favorite-button").title = saved ? "取消收藏这句" : "收藏这句";
-  $("favorite-label").textContent = saved ? "已收藏" : "收藏";
+  $("favorite-button").setAttribute("aria-label", t(saved ? "unsave" : "save"));
+  $("favorite-button").title = t(saved ? "unsave" : "save");
+  $("favorite-label").textContent = t(saved ? "saved" : "favorite");
 }
 
-async function displayQuote(quote, fromLibrary = false, selection = {}) {
-  const version = ++renderVersion;
-  current = quote;
+function updateQuoteText() {
+  const quote = current;
+  const fromLibrary = currentFromLibrary;
+  const selection = currentSelection;
   const online = quote.provider === "online";
   const hasArt = Boolean(quote.art) && (!online || quote.artExact);
   document.body.classList.toggle(
     "long-verse",
     quote.lines.some((line) => line.length > 12),
   );
-  $("content-source").textContent = online
-    ? selection.source === "cached"
-      ? "今日诗词 · 最近推荐"
-      : "今日诗词 · 在线推荐"
-    : selection.status === "unavailable"
-      ? "离线精选 · 网络暂不可用"
-      : selection.status === "repeat"
-        ? "离线精选 · 在线内容暂未更新"
-        : "离线精选";
-  $("content-source").title = hasArt ? "与诗句对应的 AI 插画" : "默认背景";
+  $("content-source").textContent = t(
+    waitingForOnline
+      ? "fetchingSource"
+      : online
+        ? selection.source === "cached"
+          ? "cachedSource"
+          : "onlineSource"
+        : selection.status === "unavailable"
+          ? "unavailableSource"
+          : selection.status === "repeat"
+            ? "repeatedSource"
+            : "offlineSource",
+  );
+  $("content-source").title = t(hasArt ? "artHint" : "defaultBackground");
   const nodes = quote.lines.map((line) => {
     const span = document.createElement("span");
     span.textContent = line;
@@ -122,20 +146,32 @@ async function displayQuote(quote, fromLibrary = false, selection = {}) {
   $("byline").textContent =
     `${quote.dynasty} · ${quote.author}  /  《${quote.title}》`;
   $("reason").textContent = fromLibrary
-    ? "收藏中的一笺"
+    ? t("fromLibrary")
     : online
-      ? quote.tags?.join(" · ") || "此刻的诗意"
-      : matchingReason(quote, context);
+      ? (getLanguage() === "zh" && quote.tags?.join(" · ")) || t("forMoment")
+      : `${t(quote.seasons.includes(context.season) ? context.season : "now")} · ${t(context.period)}`;
   $("inline-meaning").textContent = quote.meaning
     ? (quote.provider === "online" && quote.meaningHeading === "作品译文"
-        ? "作品译文："
+        ? t("translationPrefix")
         : "") +
       quote.meaning.slice(0, 120) +
       (quote.meaning.length > 120 ? "…" : "")
-    : "这首作品暂未提供译文，可展开阅读原文。";
-  document.title = `${quote.lines.join("，")} · 一笺`;
+    : t("missingMeaning");
+  $("inline-meaning").lang = quote.meaning ? "zh-CN" : locale();
+  document.title = `${quote.lines.join("，")} · ${t("brand")}`;
   updateFavorite();
   populateReading();
+}
+
+async function displayQuote(quote, fromLibrary = false, selection = {}) {
+  const version = ++renderVersion;
+  current = quote;
+  currentSelection = selection;
+  currentFromLibrary = fromLibrary;
+  waitingForOnline = false;
+  updateQuoteText();
+  const hasArt =
+    Boolean(quote.art) && (quote.provider !== "online" || quote.artExact);
   const art = $("art");
   const src = hasArt ? `assets/art/${quote.art}.webp` : null;
   if (!src) {
@@ -166,9 +202,9 @@ async function displayQuote(quote, fromLibrary = false, selection = {}) {
     if (version !== renderVersion) return;
     resetBackground();
     document.body.dataset.quote = quote.id;
-    $("art-caption").textContent = "默认背景";
-    $("content-source").title = "默认背景";
-    toast("插画暂时未能载入，请检查扩展文件是否完整");
+    $("art-caption").textContent = t("defaultBackground");
+    $("content-source").title = t("defaultBackground");
+    toast("imageError");
   }
 }
 
@@ -204,8 +240,10 @@ async function nextQuote(options = {}) {
       renderVersion === viewAtRequest
     )
       await displayQuote(quote, false, result);
-    else if ($("content-source").textContent.includes("正在获取"))
-      $("content-source").textContent = "离线精选";
+    else if (waitingForOnline) {
+      waitingForOnline = false;
+      updateQuoteText();
+    }
   } catch (error) {
     console.error("Selection failed:", error.message);
     // Still show context-appropriate content if persistent storage is unavailable.
@@ -213,7 +251,7 @@ async function nextQuote(options = {}) {
     await displayQuote(
       selectQuote(QUOTES, context, [], Math.random, current?.id),
     );
-    toast("本地存储暂不可用，当前诗句仍可阅读");
+    toast("storageError");
   } finally {
     busy = false;
     $("next-button").disabled = false;
@@ -231,25 +269,27 @@ function populateReading() {
   $("reading-byline").textContent =
     `${current.dynasty} · ${current.author} · ${current.kind}`;
   $("reading-verse").textContent = current.lines.join("，") + "。";
-  $("meaning-heading").textContent = current.meaningHeading || "句意";
-  $("meaning").textContent =
-    current.meaning || "今日诗词暂未提供这首作品的译文，可结合下方原文阅读。";
+  $("meaning-heading").textContent = t(
+    current.meaningHeading === "作品译文" ? "translation" : "meaning",
+  );
+  $("meaning").textContent = current.meaning || t("missingReading");
+  $("meaning").lang = current.meaning ? "zh-CN" : locale();
   $("appreciation-section").hidden = !current.appreciation;
   $("appreciation").textContent = current.appreciation || "";
   $("art-caption").textContent =
     current.art && (current.provider !== "online" || current.artExact)
-      ? "插画为该句 AI 意境创作"
-      : "默认背景";
+      ? t("artCaption")
+      : t("defaultBackground");
   $("source-link").textContent =
     current.provider === "online" && !current.artExact
-      ? "检索作品原文 ↗"
-      : "查阅原文出处 ↗";
+      ? t("searchSource")
+      : t("source");
   $("provider-note").hidden = current.provider !== "online";
   $("provider-note").textContent = current.artExact
-    ? "诗句与原文由今日诗词提供；句意与意境来自离线精选。"
-    : "文字与作品译文由今日诗词提供。";
+    ? t("providerExact")
+    : t("providerNote");
   $("fulltext").textContent = current.fullText;
-  $("fulltext-label").textContent = current.excerpt ? "原文节选" : "原文";
+  $("fulltext-label").textContent = t(current.excerpt ? "excerpt" : "original");
   $("source-link").href = current.source;
 }
 
@@ -264,11 +304,14 @@ function populateLibrary() {
     .map((id) => resolveFavorite(id, favoriteSnapshots))
     .filter(Boolean)
     .reverse();
-  $("library-count").textContent = `共 ${saved.length} 笺`;
+  $("library-count").textContent = t("libraryCount", {
+    count: saved.length,
+    noun: saved.length === 1 ? "poem" : "poems",
+  });
   if (!saved.length) {
     const p = document.createElement("p");
     p.className = "empty-library";
-    p.textContent = "还没有收藏。遇到喜欢的句子，\n点一下心，就能把它留下。";
+    p.textContent = t("emptyLibrary");
     $("library-list").replaceChildren(p);
     return;
   }
@@ -278,6 +321,7 @@ function populateLibrary() {
       button.type = "button";
       button.className = "saved-quote";
       const text = document.createElement("span");
+      text.lang = "zh-CN";
       const strong = document.createElement("strong");
       strong.textContent = quote.lines.join("，");
       const small = document.createElement("small");
@@ -297,6 +341,16 @@ function populateLibrary() {
 }
 
 const refreshCalendar = initCalendar(openDialog);
+const languagePicker = createSelect($("language"), {
+  options: [
+    { value: "auto", label: t("autoLanguage") },
+    { value: "zh", label: "中文" },
+    { value: "en", label: "English" },
+  ],
+  value: settings.language,
+  onChange: () =>
+    $("language").dispatchEvent(new Event("change", { bubbles: true })),
+});
 
 $("next-button").addEventListener("click", nextQuote);
 $("favorite-button").addEventListener("click", async () => {
@@ -310,9 +364,9 @@ $("favorite-button").addEventListener("click", async () => {
     favorites = result.favorites;
     favoriteSnapshots = result.favoriteSnapshots || {};
     updateFavorite();
-    toast(favorites.includes(id) ? "已收入收藏册" : "已取消收藏");
+    toast(favorites.includes(id) ? "favoriteAdded" : "favoriteRemoved");
   } catch {
-    toast("收藏未能保存，请稍后重试");
+    toast("favoriteError");
   } finally {
     favoriteBusy = false;
     $("favorite-button").disabled = false;
@@ -353,6 +407,7 @@ $("settings-form").addEventListener("change", () => {
   const oldHemisphere = settings.hemisphere;
   const oldOnline = settings.onlineEnabled;
   settings = sanitizeSettings({
+    language: $("language").value,
     onlineEnabled: $("online-enabled").checked,
     hemisphere: $("hemisphere").value,
     showClock: $("show-clock").checked,
@@ -373,7 +428,7 @@ $("settings-form").addEventListener("change", () => {
         )
           await nextQuote();
       } catch {
-        toast("设置未能保存，请稍后重试");
+        toast("settingsError");
       }
     });
 });
@@ -456,15 +511,17 @@ async function init() {
       ? savedFavorites.filter((id) => resolveFavorite(id, favoriteSnapshots))
       : [];
   } catch {
-    toast("本地数据暂时未能读取");
+    toast("dataError");
   }
   applySettings();
   const rawHistory = await storage.get("history", []).catch(() => []);
   await displayQuote(
     selectQuote(QUOTES, context, Array.isArray(rawHistory) ? rawHistory : []),
   );
-  if (settings.onlineEnabled && globalThis.chrome?.runtime?.id)
-    $("content-source").textContent = "离线精选 · 正在获取在线推荐";
+  if (settings.onlineEnabled && globalThis.chrome?.runtime?.id) {
+    waitingForOnline = true;
+    updateQuoteText();
+  }
   await nextQuote({ initial: true });
   setInterval(updateClock, 15000);
   document.addEventListener("visibilitychange", () => {

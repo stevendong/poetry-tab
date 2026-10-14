@@ -1,4 +1,5 @@
 export const DEFAULT_SETTINGS = {
+  language: "auto",
   onlineEnabled: true,
   hemisphere: "north",
   showClock: true,
@@ -9,6 +10,10 @@ export const DEFAULT_SETTINGS = {
 export function sanitizeSettings(value = {}) {
   value = value && typeof value === "object" ? value : {};
   return {
+    language:
+      value.language === "en" || value.language === "zh"
+        ? value.language
+        : "auto",
     onlineEnabled:
       typeof value.onlineEnabled === "boolean" ? value.onlineEnabled : true,
     hemisphere: value.hemisphere === "south" ? "south" : "north",

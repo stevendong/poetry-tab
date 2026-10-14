@@ -31,6 +31,28 @@ export function lunarDate(date) {
             : "三十";
   return {
     month: parts.month,
+    monthNumber:
+      [
+        "正月",
+        "二月",
+        "三月",
+        "四月",
+        "五月",
+        "六月",
+        "七月",
+        "八月",
+        "九月",
+        "十月",
+        "十一月",
+        "十二月",
+      ].indexOf(
+        parts.month
+          .replace("闰", "")
+          .replace("冬月", "十一月")
+          .replace("腊月", "十二月"),
+      ) + 1,
+    isLeap: parts.month.startsWith("闰"),
+    year: Number(parts.relatedYear),
     day,
     dayName,
     yearName: parts.yearName,

@@ -61,7 +61,9 @@ try {
   const extensionId = new URL(worker.url()).host;
   assert.ok(extensionId);
   await worker.evaluate(async () =>
-    chrome.storage.local.set({ settings: { onlineEnabled: false } }),
+    chrome.storage.local.set({
+      settings: { onlineEnabled: false, language: "zh" },
+    }),
   );
   pass("Actual MV3 service worker loaded");
   const page = await browser.newPage();
@@ -186,6 +188,8 @@ try {
   // Simultaneous new tabs exercise serialized selection and independent favorite updates.
   const tabs = await Promise.all([browser.newPage(), browser.newPage()]);
   tabs.forEach(observe);
+  // Keep concurrent startup selection independent of history from earlier checks.
+  await worker.evaluate(() => chrome.storage.local.remove("history"));
   await Promise.all(tabs.map((tab) => tab.goto("chrome://newtab/")));
   await Promise.all(tabs.map(ready));
   const concurrentIds = await Promise.all(
@@ -262,6 +266,7 @@ try {
   await worker.evaluate(async () =>
     chrome.storage.local.set({
       settings: {
+        language: "zh",
         onlineEnabled: false,
         hemisphere: "north",
         showClock: true,
@@ -342,6 +347,9 @@ try {
     ],
   });
   const preview = await browser.newPage();
+  await preview.addInitScript(() =>
+    localStorage.setItem("yijian:settings", JSON.stringify({ language: "zh" })),
+  );
   observe(preview);
   await preview.goto(`http://127.0.0.1:${server.address().port}/`);
   await ready(preview);

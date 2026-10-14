@@ -8,25 +8,30 @@ import {
   monthDates,
 } from "./calendar.js";
 import { createSelect } from "./custom-select.js";
+import {
+  t,
+  locale,
+  getLanguage,
+  monthLabel,
+  yearLabel,
+  termLabel,
+  lunarLabel,
+  lunarAccessible,
+} from "./i18n.js";
 
 const $ = (id) => document.getElementById(id);
-const fullDate = new Intl.DateTimeFormat("zh-CN", {
-  year: "numeric",
-  month: "long",
-  day: "numeric",
-  weekday: "long",
-});
 
 export function initCalendar(openDialog) {
   let selected = new Date();
   let renderedToday;
+  let renderedLanguage;
   const yearSelect = $("calendar-year");
   const monthSelect = $("calendar-month");
   const days = $("calendar-days");
   const yearPicker = createSelect(yearSelect, {
     options: Array.from({ length: MAX_YEAR - MIN_YEAR + 1 }, (_, i) => ({
       value: MIN_YEAR + i,
-      label: `${MIN_YEAR + i}年`,
+      label: yearLabel(MIN_YEAR + i),
     })),
     value: selected.getFullYear(),
     columns: 3,
@@ -35,7 +40,7 @@ export function initCalendar(openDialog) {
   const monthPicker = createSelect(monthSelect, {
     options: Array.from({ length: 12 }, (_, month) => ({
       value: month,
-      label: `${month + 1}月`,
+      label: monthLabel(month),
     })),
     value: selected.getMonth(),
     columns: 3,
@@ -43,14 +48,38 @@ export function initCalendar(openDialog) {
   });
 
   function render(focusDay = false) {
+    const fullDate = new Intl.DateTimeFormat(locale(), {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      weekday: "long",
+    });
     const year = selected.getFullYear();
     const month = selected.getMonth();
     const today = dateKey(new Date());
     renderedToday = today;
+    renderedLanguage = getLanguage();
     const selectedKey = dateKey(selected);
+    yearPicker.setLabels(
+      Array.from({ length: MAX_YEAR - MIN_YEAR + 1 }, (_, i) =>
+        yearLabel(MIN_YEAR + i),
+      ),
+    );
+    monthPicker.setLabels(Array.from({ length: 12 }, (_, i) => monthLabel(i)));
     yearPicker.setValue(year);
     monthPicker.setValue(month);
-    $("calendar-month-title").textContent = `${year}年${month + 1}月`;
+    $("calendar-month-title").textContent =
+      getLanguage() === "zh"
+        ? `${year}年${month + 1}月`
+        : `${monthLabel(month, "long")} ${year}`;
+    document.querySelectorAll(".calendar-weekdays span").forEach((span, i) => {
+      span.textContent =
+        getLanguage() === "zh"
+          ? ["一", "二", "三", "四", "五", "六", "日"][i]
+          : new Intl.DateTimeFormat(locale(), { weekday: "short" }).format(
+              new Date(2026, 9, 5 + i, 12),
+            );
+    });
     $("calendar-prev").disabled = year === MIN_YEAR && month === 0;
     $("calendar-next").disabled = year === MAX_YEAR && month === 11;
     const terms = [];
@@ -71,7 +100,7 @@ export function initCalendar(openDialog) {
         if (key === today) button.setAttribute("aria-current", "date");
         button.setAttribute(
           "aria-label",
-          `${fullDate.format(date)}，农历${lunar.month}${lunar.dayName}${term ? `，${term}` : ""}${key === today ? "，今天" : ""}`,
+          `${fullDate.format(date)} · ${lunarAccessible(lunar)}${term ? ` · ${termLabel(term)}` : ""}${key === today ? ` · ${t("today")}` : ""}`,
         );
         button.tabIndex = key === selectedKey ? 0 : -1;
         button.disabled =
@@ -81,22 +110,33 @@ export function initCalendar(openDialog) {
         number.textContent = String(date.getDate());
         const label = document.createElement("span");
         label.className = "calendar-lunar";
-        label.textContent = term || lunar.label;
+        label.textContent = term
+          ? getLanguage() === "en"
+            ? t("termShort")
+            : term
+          : lunarLabel(lunar, true);
+        if (term) button.title = termLabel(term);
         button.append(number, label);
         button.addEventListener("click", () => choose(date, true));
-        if (inMonth && term) terms.push(`${term} ${date.getDate()}日`);
+        if (inMonth && term)
+          terms.push(
+            getLanguage() === "zh"
+              ? `${term} ${date.getDate()}日`
+              : `${termLabel(term)} ${monthLabel(month)} ${date.getDate()}`,
+          );
         return button;
       }),
     );
     const lunar = lunarDate(selected);
     const term = solarTermOnDate(selected);
     $("calendar-selected-date").textContent = fullDate.format(selected);
-    $("calendar-selected-lunar").textContent =
-      `农历 ${lunar.yearName}年 · ${lunar.animal}年 · ${lunar.month}${lunar.dayName}`;
-    $("calendar-selected-term").textContent = term;
+    $("calendar-selected-lunar").textContent = lunarLabel(lunar);
+    $("calendar-selected-term").textContent = termLabel(term);
     $("calendar-selected-term").hidden = !term;
     $("calendar-today-label").hidden = selectedKey !== today;
-    $("calendar-terms").textContent = `本月节气：${terms.join(" · ")}`;
+    $("calendar-terms").textContent = t("solarTerms", {
+      terms: terms.join(" · "),
+    });
     if (focusDay) days.querySelector(`[data-date="${selectedKey}"]`).focus();
   }
 
@@ -157,7 +197,11 @@ export function initCalendar(openDialog) {
     choose(date, true);
   });
   return () => {
-    if ($("calendar-dialog").open && renderedToday !== dateKey(new Date())) {
+    if (
+      $("calendar-dialog").open &&
+      (renderedToday !== dateKey(new Date()) ||
+        renderedLanguage !== getLanguage())
+    ) {
       render(days.contains(document.activeElement));
     }
   };

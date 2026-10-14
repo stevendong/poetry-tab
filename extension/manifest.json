@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "一笺 · 诗意新标签页",
+  "name": "__MSG_extensionName__",
+  "default_locale": "zh_CN",
   "version": "0.2.0",
-  "description": "随时间与四季遇见诗意：今日诗词在线推荐，17 组离线诗画兜底，收藏与设置保存在本机。",
+  "description": "__MSG_extensionDescription__",
   "permissions": ["storage"],
   "background": {
     "service_worker": "background.js",

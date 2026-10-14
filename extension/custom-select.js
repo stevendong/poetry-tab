@@ -95,7 +95,9 @@ export function createSelect(
     position();
     menu.scrollTop = Math.max(
       0,
-      Math.floor((items[selectedIndex].offsetTop - menu.clientHeight / 2) / 40) * 40,
+      Math.floor(
+        (items[selectedIndex].offsetTop - menu.clientHeight / 2) / 40,
+      ) * 40,
     );
     activate(selectedIndex);
   }
@@ -185,5 +187,14 @@ export function createSelect(
     true,
   );
   setValue(value);
-  return { setValue };
+  function setLabels(labels) {
+    labels.forEach((text, i) => {
+      options[i].label = text;
+      items[i].textContent = text;
+    });
+    label.textContent = options[selectedIndex].label;
+    menu.setAttribute("aria-label", button.getAttribute("aria-label"));
+    if (opened) position();
+  }
+  return { setValue, setLabels };
 }

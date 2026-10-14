@@ -8,7 +8,7 @@
       http-equiv="Content-Security-Policy"
       content="script-src 'self'; object-src 'none'; connect-src 'self' https://v2.jinrishici.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'none'"
     />
-    <title>一笺 · 诗意新标签页</title>
+    <title data-i18n="pageTitle">一笺 · 诗意新标签页</title>
     <link rel="icon" href="assets/icons/icon48.png" />
     <link rel="stylesheet" href="styles.css" />
     <script type="module" src="app.js"></script>
@@ -60,8 +60,10 @@
         <div class="brand">
           <span class="seal" aria-hidden="true">笺</span>
           <div>
-            <span class="brand-name">一笺</span
-            ><span class="brand-subtitle">打开一页，遇见诗意</span>
+            <span class="brand-name" data-i18n="brand">一笺</span
+            ><span class="brand-subtitle" data-i18n="tagline"
+              >打开一页，遇见诗意</span
+            >
           </div>
         </div>
         <button
@@ -69,8 +71,10 @@
           class="almanac"
           type="button"
           aria-label="打开万年历"
+          data-i18n-aria-label="openCalendar"
           aria-haspopup="dialog"
           title="打开万年历"
+          data-i18n-title="openCalendar"
         >
           <span id="date-label"></span
           ><span class="almanac-line"
@@ -79,6 +83,7 @@
             ><span
               id="term-label"
               title="仅在节气当天显示，日期按近似计算"
+              data-i18n-title="termHint"
               hidden
             ></span
           ></span>
@@ -86,48 +91,61 @@
       </header>
       <main class="poetry" id="poetry" aria-busy="true">
         <div class="eyebrow">
-          <span class="rule"></span><span id="reason">正在拾取此刻的诗意</span>
+          <span class="rule"></span
+          ><span id="reason" data-i18n="loading">正在拾取此刻的诗意</span>
         </div>
-        <h1 id="verse"><span>一笺诗意</span><span>与时光相遇</span></h1>
-        <p class="byline" id="byline"></p>
+        <h1 id="verse" lang="zh-CN">
+          <span>一笺诗意</span><span>与时光相遇</span>
+        </h1>
+        <p class="byline" id="byline" lang="zh-CN"></p>
         <p id="content-source" class="content-source" aria-live="polite"></p>
-        <p class="inline-meaning" id="inline-meaning" hidden></p>
+        <p class="inline-meaning" id="inline-meaning" lang="zh-CN" hidden></p>
         <button class="reading-link" id="read-button" type="button">
-          读懂这一句 <svg class="icon"><use href="#i-arrow" /></svg>
+          <span data-i18n="read">读懂这一句</span>
+          <svg class="icon"><use href="#i-arrow" /></svg>
         </button>
       </main>
       <footer class="footer">
         <div class="clock-wrap" id="clock-wrap">
           <time id="clock" class="clock"></time
-          ><span id="clock-caption">片刻闲暇，也有山川</span>
+          ><span id="clock-caption" data-i18n="clockCaption"
+            >片刻闲暇，也有山川</span
+          >
         </div>
-        <nav class="tools" aria-label="诗句操作">
+        <nav class="tools" aria-label="诗句操作" data-i18n-aria-label="actions">
           <button
             class="tool"
             id="next-button"
             title="换一句（空格键）"
+            data-i18n-title="nextHint"
             aria-label="换一句"
+            data-i18n-aria-label="next"
             type="button"
           >
-            <svg class="icon"><use href="#i-refresh" /></svg><span>换一句</span>
+            <svg class="icon"><use href="#i-refresh" /></svg
+            ><span data-i18n="next">换一句</span>
           </button>
           <button
             class="tool"
             id="favorite-button"
             title="收藏这句"
+            data-i18n-title="save"
             aria-label="收藏这句"
+            data-i18n-aria-label="save"
             aria-pressed="false"
             type="button"
           >
             <svg class="icon"><use href="#i-heart" /></svg
-            ><span id="favorite-label">收藏</span>
+            ><span id="favorite-label" data-i18n="favorite">收藏</span>
           </button>
           <span class="tool-divider" aria-hidden="true"></span>
           <button
             class="tool icon-only"
             id="library-button"
             title="收藏册"
+            data-i18n-title="library"
             aria-label="打开收藏册"
+            data-i18n-aria-label="openLibrary"
             type="button"
           >
             <svg class="icon"><use href="#i-library" /></svg>
@@ -136,7 +154,9 @@
             class="tool icon-only"
             id="settings-button"
             title="设置"
+            data-i18n-title="settings"
             aria-label="打开设置"
+            data-i18n-aria-label="openSettings"
             type="button"
           >
             <svg class="icon"><use href="#i-settings" /></svg>
@@ -151,18 +171,27 @@
       aria-labelledby="calendar-title"
     >
       <div class="sheet-top">
-        <span class="sheet-kicker">一日一页，岁岁年年</span>
-        <button class="close" data-close aria-label="关闭万年历" type="button">
+        <span class="sheet-kicker" data-i18n="calendarKicker"
+          >一日一页，岁岁年年</span
+        >
+        <button
+          class="close"
+          data-close
+          aria-label="关闭万年历"
+          data-i18n-aria-label="closeCalendar"
+          type="button"
+        >
           <svg class="icon"><use href="#i-close" /></svg>
         </button>
       </div>
-      <h2 id="calendar-title">万年历</h2>
+      <h2 id="calendar-title" data-i18n="calendar">万年历</h2>
       <div class="calendar-toolbar">
         <button
           id="calendar-prev"
           class="calendar-nav"
           type="button"
           aria-label="上个月"
+          data-i18n-aria-label="previousMonth"
         >
           ‹
         </button>
@@ -171,11 +200,13 @@
             id="calendar-year"
             type="button"
             aria-label="选择年份"
+            data-i18n-aria-label="chooseYear"
           ></button>
           <button
             id="calendar-month"
             type="button"
             aria-label="选择月份"
+            data-i18n-aria-label="chooseMonth"
           ></button>
         </div>
         <button
@@ -183,10 +214,13 @@
           class="calendar-nav"
           type="button"
           aria-label="下个月"
+          data-i18n-aria-label="nextMonth"
         >
           ›
         </button>
-        <button id="calendar-today" type="button">今天</button>
+        <button id="calendar-today" type="button" data-i18n="today">
+          今天
+        </button>
       </div>
       <p id="calendar-month-title" class="sr-only" aria-live="polite"></p>
       <div class="calendar-weekdays" aria-hidden="true">
@@ -202,13 +236,15 @@
       <div class="calendar-detail" aria-live="polite" aria-atomic="true">
         <div class="calendar-detail-top">
           <p id="calendar-selected-date"></p>
-          <span id="calendar-today-label" class="calendar-tag">今天</span>
+          <span id="calendar-today-label" class="calendar-tag" data-i18n="today"
+            >今天</span
+          >
           <span id="calendar-selected-term" class="calendar-tag" hidden></span>
         </div>
         <p id="calendar-selected-lunar"></p>
       </div>
       <p id="calendar-terms" class="calendar-terms"></p>
-      <p class="privacy-note">
+      <p class="privacy-note" data-i18n="calendarNote">
         可查看 1900—2100 年。日期使用本机时区，节气日期采用近似计算。
       </p>
     </dialog>
@@ -218,47 +254,72 @@
       aria-labelledby="reading-title"
     >
       <div class="sheet-top">
-        <span class="sheet-kicker">一字一句，皆有来处</span
-        ><button class="close" data-close aria-label="关闭解读" type="button">
+        <span class="sheet-kicker" data-i18n="readingKicker"
+          >一字一句，皆有来处</span
+        ><button
+          class="close"
+          data-close
+          aria-label="关闭解读"
+          data-i18n-aria-label="closeReading"
+          type="button"
+        >
           <svg class="icon"><use href="#i-close" /></svg>
         </button>
       </div>
-      <h2 id="reading-title"></h2>
-      <p class="sheet-byline" id="reading-byline"></p>
-      <div class="reading-verse" id="reading-verse"></div>
+      <h2 id="reading-title" lang="zh-CN"></h2>
+      <p class="sheet-byline" id="reading-byline" lang="zh-CN"></p>
+      <div class="reading-verse" id="reading-verse" lang="zh-CN"></div>
       <section>
-        <h3 id="meaning-heading">句意</h3>
-        <p id="meaning"></p>
+        <h3 id="meaning-heading" data-i18n="meaning">句意</h3>
+        <p id="meaning" lang="zh-CN"></p>
       </section>
       <section id="appreciation-section">
-        <h3>意境</h3>
-        <p id="appreciation"></p>
+        <h3 data-i18n="appreciation">意境</h3>
+        <p id="appreciation" lang="zh-CN"></p>
       </section>
       <section class="original">
-        <h3 id="fulltext-label">原文</h3>
-        <p id="fulltext"></p>
+        <h3 id="fulltext-label" data-i18n="original">原文</h3>
+        <p id="fulltext" lang="zh-CN"></p>
       </section>
       <div class="sheet-foot">
-        <span id="art-caption">插画为 AI 意境创作</span
-        ><a id="source-link" target="_blank" rel="noopener noreferrer"
+        <span id="art-caption" data-i18n="artCaption">插画为 AI 意境创作</span
+        ><a
+          id="source-link"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-i18n="source"
           >查阅原文出处 ↗</a
         >
       </div>
-      <p id="provider-note" class="privacy-note" hidden>
+      <p
+        id="provider-note"
+        class="privacy-note"
+        hidden
+        data-i18n="providerNote"
+      >
         文字与作品译文由今日诗词提供。
       </p>
     </dialog>
     <dialog id="library-dialog" class="sheet" aria-labelledby="library-title">
       <div class="sheet-top">
-        <span class="sheet-kicker">把喜欢的句子，留在身边</span
-        ><button class="close" data-close aria-label="关闭收藏册" type="button">
+        <span class="sheet-kicker" data-i18n="libraryKicker"
+          >把喜欢的句子，留在身边</span
+        ><button
+          class="close"
+          data-close
+          aria-label="关闭收藏册"
+          data-i18n-aria-label="closeLibrary"
+          type="button"
+        >
           <svg class="icon"><use href="#i-close" /></svg>
         </button>
       </div>
-      <h2 id="library-title">收藏册</h2>
+      <h2 id="library-title" data-i18n="library">收藏册</h2>
       <p class="sheet-byline" id="library-count"></p>
       <div id="library-list" class="library-list"></div>
-      <p class="privacy-note">收藏保存在这台浏览器中，离线也能翻阅。</p>
+      <p class="privacy-note" data-i18n="libraryNote">
+        收藏保存在这台浏览器中，离线也能翻阅。
+      </p>
     </dialog>
     <dialog
       id="settings-dialog"
@@ -266,17 +327,40 @@
       aria-labelledby="settings-title"
     >
       <div class="sheet-top">
-        <span class="sheet-kicker">让诗意，适合你的日常</span
-        ><button class="close" data-close aria-label="关闭设置" type="button">
+        <span class="sheet-kicker" data-i18n="settingsKicker"
+          >让诗意，适合你的日常</span
+        ><button
+          class="close"
+          data-close
+          aria-label="关闭设置"
+          data-i18n-aria-label="closeSettings"
+          type="button"
+        >
           <svg class="icon"><use href="#i-close" /></svg>
         </button>
       </div>
-      <h2 id="settings-title">偏好设置</h2>
+      <h2 id="settings-title" data-i18n="preferences">偏好设置</h2>
       <form id="settings-form">
+        <label class="setting-row" for="language">
+          <span
+            ><strong data-i18n="language">界面语言</strong
+            ><small data-i18n="languageHint">诗文与解读保留中文</small></span
+          >
+          <button
+            id="language"
+            type="button"
+            aria-label="选择界面语言"
+            data-i18n-aria-label="chooseLanguage"
+          >
+            跟随浏览器
+          </button>
+        </label>
         <label class="setting-row" for="online-enabled"
           ><span
-            ><strong>在线诗词推荐</strong
-            ><small>优先今日诗词，断网时使用离线精选</small></span
+            ><strong data-i18n="onlineEnabled">在线诗词推荐</strong
+            ><small data-i18n="onlineHint"
+              >优先今日诗词，断网时使用离线精选</small
+            ></span
           ><input
             id="online-enabled"
             name="onlineEnabled"
@@ -285,15 +369,19 @@
         /></label>
         <label class="setting-row" for="hemisphere"
           ><span
-            ><strong>所在半球</strong
-            ><small>让四季与你所在的地方相合</small></span
+            ><strong data-i18n="hemisphere">所在半球</strong
+            ><small data-i18n="hemisphereHint"
+              >让四季与你所在的地方相合</small
+            ></span
           ><select id="hemisphere" name="hemisphere">
-            <option value="north">北半球</option>
-            <option value="south">南半球</option>
+            <option value="north" data-i18n="north">北半球</option>
+            <option value="south" data-i18n="south">南半球</option>
           </select></label
         >
         <label class="setting-row" for="show-clock"
-          ><span><strong>显示时间</strong><small>留一点空间给当下</small></span
+          ><span
+            ><strong data-i18n="showClock">显示时间</strong
+            ><small data-i18n="clockHint">留一点空间给当下</small></span
           ><input
             id="show-clock"
             name="showClock"
@@ -302,8 +390,8 @@
         /></label>
         <label class="setting-row" for="show-meaning"
           ><span
-            ><strong>直接显示句意</strong
-            ><small>在诗句下方显示简短解释</small></span
+            ><strong data-i18n="showMeaning">直接显示句意</strong
+            ><small data-i18n="meaningHint">在诗句下方显示简短解释</small></span
           ><input
             id="show-meaning"
             name="showMeaning"
@@ -311,16 +399,18 @@
             class="switch"
         /></label>
         <label class="setting-row" for="text-size"
-          ><span><strong>诗句字号</strong><small>读起来更舒适</small></span
+          ><span
+            ><strong data-i18n="textSize">诗句字号</strong
+            ><small data-i18n="textHint">读起来更舒适</small></span
           ><select id="text-size" name="textSize">
-            <option value="normal">标准</option>
-            <option value="large">较大</option>
+            <option value="normal" data-i18n="normalSize">标准</option>
+            <option value="large" data-i18n="largeSize">较大</option>
           </select></label
         >
         <label class="setting-row shade-row" for="shade"
           ><span
-            ><strong>背景遮罩</strong
-            ><small>加深遮罩，让文字更清晰</small></span
+            ><strong data-i18n="shade">背景遮罩</strong
+            ><small data-i18n="shadeHint">加深遮罩，让文字更清晰</small></span
           ><input
             id="shade"
             name="shade"
@@ -329,16 +419,18 @@
             max="70"
             step="5"
         /></label>
-        <p class="privacy-note">
+        <p class="privacy-note" data-i18n="settingsNote">
           设置自动保存。时钟与离线选句使用本机时区；离线四季以立春、立夏、立秋、立冬划分，南半球相反。在线选句由今日诗词服务推荐。节气名称沿用中国传统，交界时刻采用近似计算。
         </p>
-        <p class="privacy-note">
+        <p class="privacy-note" data-i18n="privacyNote">
           内置 17 组离线诗画。在线推荐由今日诗词提供，会依据 IP
           等信息推荐；关闭在线推荐后仅使用离线内容。无需账号或定位权限。按空格换一句，按
           Esc 关闭面板。
         </p>
       </form>
     </dialog>
-    <noscript>请启用 JavaScript 以展示与此刻相应的诗词。</noscript>
+    <noscript data-i18n="noScript"
+      >请启用 JavaScript 以展示与此刻相应的诗词。</noscript
+    >
   </body>
 </html>

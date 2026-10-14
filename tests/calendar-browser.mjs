@@ -259,7 +259,9 @@ try {
     browser.serviceWorkers()[0] ||
     (await browser.waitForEvent("serviceworker"));
   await worker.evaluate(() =>
-    chrome.storage.local.set({ settings: { onlineEnabled: false } }),
+    chrome.storage.local.set({
+      settings: { onlineEnabled: false, language: "zh" },
+    }),
   );
   const page = await browser.newPage();
   await verifyCalendar(page, "chrome://newtab/", "extension");
@@ -267,6 +269,9 @@ try {
   server = createPreviewServer();
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const preview = await browser.newPage();
+  await preview.addInitScript(() =>
+    localStorage.setItem("yijian:settings", JSON.stringify({ language: "zh" })),
+  );
   await verifyCalendar(
     preview,
     `http://127.0.0.1:${server.address().port}/`,
