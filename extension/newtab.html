@@ -64,16 +64,25 @@
             ><span class="brand-subtitle">把日子，过成诗</span>
           </div>
         </div>
-        <div class="almanac">
+        <button
+          id="almanac-button"
+          class="almanac"
+          type="button"
+          aria-label="打开万年历"
+          aria-haspopup="dialog"
+          title="打开万年历"
+        >
           <span id="date-label"></span
           ><span class="almanac-line"
-            ><span id="season-label"></span><span class="dot">·</span
+            ><span id="season-label"></span
+            ><span id="term-dot" class="dot" hidden>·</span
             ><span
               id="term-label"
-              title="按太阳黄经近似计算，中国传统节气"
+              title="仅在节气当天显示，日期按近似计算"
+              hidden
             ></span
           ></span>
-        </div>
+        </button>
       </header>
       <main class="poetry" id="poetry" aria-busy="true">
         <div class="eyebrow">
@@ -136,6 +145,73 @@
       </footer>
     </div>
     <p id="toast" class="toast" role="status" aria-live="polite" hidden></p>
+    <dialog
+      id="calendar-dialog"
+      class="sheet calendar-sheet"
+      aria-labelledby="calendar-title"
+    >
+      <div class="sheet-top">
+        <span class="sheet-kicker">一日一页，岁岁年年</span>
+        <button class="close" data-close aria-label="关闭万年历" type="button">
+          <svg class="icon"><use href="#i-close" /></svg>
+        </button>
+      </div>
+      <h2 id="calendar-title">万年历</h2>
+      <div class="calendar-toolbar">
+        <button
+          id="calendar-prev"
+          class="calendar-nav"
+          type="button"
+          aria-label="上个月"
+        >
+          ‹
+        </button>
+        <div class="calendar-selects">
+          <button
+            id="calendar-year"
+            type="button"
+            aria-label="选择年份"
+          ></button>
+          <button
+            id="calendar-month"
+            type="button"
+            aria-label="选择月份"
+          ></button>
+        </div>
+        <button
+          id="calendar-next"
+          class="calendar-nav"
+          type="button"
+          aria-label="下个月"
+        >
+          ›
+        </button>
+        <button id="calendar-today" type="button">今天</button>
+      </div>
+      <p id="calendar-month-title" class="sr-only" aria-live="polite"></p>
+      <div class="calendar-weekdays" aria-hidden="true">
+        <span>一</span><span>二</span><span>三</span><span>四</span
+        ><span>五</span><span>六</span><span>日</span>
+      </div>
+      <div
+        id="calendar-days"
+        class="calendar-days"
+        role="group"
+        aria-labelledby="calendar-month-title"
+      ></div>
+      <div class="calendar-detail" aria-live="polite" aria-atomic="true">
+        <div class="calendar-detail-top">
+          <p id="calendar-selected-date"></p>
+          <span id="calendar-today-label" class="calendar-tag">今天</span>
+          <span id="calendar-selected-term" class="calendar-tag" hidden></span>
+        </div>
+        <p id="calendar-selected-lunar"></p>
+      </div>
+      <p id="calendar-terms" class="calendar-terms"></p>
+      <p class="privacy-note">
+        可查看 1900—2100 年。日期使用本机时区，节气日期采用近似计算。
+      </p>
+    </dialog>
     <dialog
       id="reading-dialog"
       class="sheet reading-sheet"

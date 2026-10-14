@@ -3,6 +3,8 @@ import { getContext, SEASONS, selectQuote, matchingReason } from "./context.js";
 import { storage, sanitizeSettings, DEFAULT_SETTINGS } from "./storage.js";
 import { createStateController } from "./state.js";
 import { resolveFavorite } from "./online.js";
+import { solarTermOnDate } from "./calendar.js";
+import { initCalendar } from "./calendar-view.js";
 const previewController = createStateController(storage, {
   allowOnline: false,
 });
@@ -57,7 +59,11 @@ function updateClock() {
   }).format(now);
   $("season-label").textContent =
     `${SEASONS[context.season]}日${settings.hemisphere === "south" ? " · 南半球" : ""}`;
-  $("term-label").textContent = context.term;
+  const term = solarTermOnDate(now);
+  $("term-label").textContent = term;
+  $("term-label").hidden = !term;
+  $("term-dot").hidden = !term;
+  refreshCalendar();
 }
 
 function applySettings() {
@@ -269,6 +275,8 @@ function populateLibrary() {
     }),
   );
 }
+
+const refreshCalendar = initCalendar(openDialog);
 
 $("next-button").addEventListener("click", nextQuote);
 $("favorite-button").addEventListener("click", async () => {
