@@ -377,8 +377,12 @@ try {
   // With a delayed response, interaction with the startup offline poem must keep it stable.
   await worker.evaluate(async (payload) => {
     await chrome.storage.local.remove(["onlineState", "history"]);
+    globalThis.__allowLateResponse = false;
     globalThis.fetch = async () => {
-      await new Promise((r) => setTimeout(r, 1000));
+      if (!globalThis.__allowLateResponse)
+        await new Promise((resolve) => {
+          globalThis.__releaseLateResponse = resolve;
+        });
       return new Response(JSON.stringify(payload));
     };
   }, fixture);
@@ -386,6 +390,10 @@ try {
   await page.waitForSelector("#art.loaded");
   const initial = await page.locator("#verse").innerText();
   await page.locator("#read-button").click();
+  await worker.evaluate(() => {
+    globalThis.__allowLateResponse = true;
+    globalThis.__releaseLateResponse?.();
+  });
   await ready(page);
   assert.equal(await page.locator("#verse").innerText(), initial);
   assert.ok(await page.locator("#reading-dialog").evaluate((d) => d.open));
