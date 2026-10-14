@@ -75,7 +75,9 @@ svg.icon {
   inset: 0;
   z-index: -1;
   overflow: hidden;
-  background: linear-gradient(135deg, #334442, #62766e);
+  background:
+    radial-gradient(ellipse at 78% 18%, #c5bd8a26, transparent 55%),
+    linear-gradient(135deg, #293e38, #526459 70%, #72755d);
 }
 #art {
   width: 100%;

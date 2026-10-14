@@ -10,6 +10,6 @@
 
 开发命令：`npm ci`、`npm test`、`npm run check`、`npm run test:browser`、`npm run test:calendar`、`npm run test:online`、`npm run pack`。`npm run preview` 提供本机预览（无需开发依赖），扩展安装本身无需 Node.js。
 
-运行时由扩展后台访问今日诗词官方 API，并使用本地文件和 `chrome.storage.local`。可在设置中关闭在线推荐。诗句为古典原文，解释由项目编写，离线逐句插画由内置 imagegen 工具生成，新增在线诗句使用意象或时令匹配的已有配图；提示词记录在 `extension/assets/art/prompts.json`。
+运行时由扩展后台访问今日诗词官方 API，并使用本地文件和 `chrome.storage.local`。可在设置中关闭在线推荐。诗句为古典原文，解释由项目编写，离线逐句插画由内置 imagegen 工具生成，在线诗句仅在与内置诗句对应时使用专属配图，其余显示默认渐变背景；提示词记录在 `extension/assets/art/prompts.json`。
 
 源码仓库：[stevendong/poetry-tab](https://github.com/stevendong/poetry-tab)。

@@ -98,6 +98,7 @@ async function displayQuote(quote, fromLibrary = false, selection = {}) {
   const version = ++renderVersion;
   current = quote;
   const online = quote.provider === "online";
+  const hasArt = Boolean(quote.art) && (!online || quote.artExact);
   document.body.classList.toggle(
     "long-verse",
     quote.lines.some((line) => line.length > 12),
@@ -111,10 +112,7 @@ async function displayQuote(quote, fromLibrary = false, selection = {}) {
       : selection.status === "repeat"
         ? "离线精选 · 在线内容暂未更新"
         : "离线精选";
-  $("content-source").title =
-    online && !quote.artExact
-      ? "背景选自已有插画库，与诗句意象或时令匹配"
-      : "与诗句对应的 AI 插画";
+  $("content-source").title = hasArt ? "与诗句对应的 AI 插画" : "默认背景";
   const nodes = quote.lines.map((line) => {
     const span = document.createElement("span");
     span.textContent = line;
@@ -138,25 +136,47 @@ async function displayQuote(quote, fromLibrary = false, selection = {}) {
   document.title = `${quote.lines.join("，")} · 一笺`;
   updateFavorite();
   populateReading();
-  const src = `assets/art/${quote.art}.webp`;
-  if ($("art").getAttribute("src") === src) {
+  const art = $("art");
+  const src = hasArt ? `assets/art/${quote.art}.webp` : null;
+  if (!src) {
+    resetBackground();
     document.body.dataset.quote = quote.id;
     return;
   }
+  if (
+    art.getAttribute("src") === src &&
+    art.classList.contains("loaded") &&
+    !art.hidden
+  ) {
+    document.body.dataset.quote = quote.id;
+    return;
+  }
+  resetBackground();
   const image = new Image();
   image.src = src;
   try {
     await image.decode();
     if (version !== renderVersion) return;
-    $("art").src = src;
-    $("art").classList.add("loaded");
+    art.src = src;
+    art.hidden = false;
+    art.classList.add("loaded");
+    document.body.dataset.background = "art";
     document.body.dataset.quote = quote.id;
   } catch {
     if (version !== renderVersion) return;
-    $("art").removeAttribute("src");
-    $("art").classList.remove("loaded");
+    resetBackground();
+    document.body.dataset.quote = quote.id;
+    $("art-caption").textContent = "默认背景";
+    $("content-source").title = "默认背景";
     toast("插画暂时未能载入，请检查扩展文件是否完整");
   }
+}
+
+function resetBackground() {
+  $("art").hidden = true;
+  $("art").removeAttribute("src");
+  $("art").classList.remove("loaded");
+  document.body.dataset.background = "default";
 }
 
 async function nextQuote(options = {}) {
@@ -217,9 +237,9 @@ function populateReading() {
   $("appreciation-section").hidden = !current.appreciation;
   $("appreciation").textContent = current.appreciation || "";
   $("art-caption").textContent =
-    current.provider === "online" && !current.artExact
-      ? "AI 意境配图 · 选自已有插画库"
-      : "插画为该句 AI 意境创作";
+    current.art && (current.provider !== "online" || current.artExact)
+      ? "插画为该句 AI 意境创作"
+      : "默认背景";
   $("source-link").textContent =
     current.provider === "online" && !current.artExact
       ? "检索作品原文 ↗"
@@ -227,7 +247,7 @@ function populateReading() {
   $("provider-note").hidden = current.provider !== "online";
   $("provider-note").textContent = current.artExact
     ? "诗句与原文由今日诗词提供；句意与意境来自离线精选。"
-    : "文字与作品译文由今日诗词提供；意境配图选自已有插画库。";
+    : "文字与作品译文由今日诗词提供。";
   $("fulltext").textContent = current.fullText;
   $("fulltext-label").textContent = current.excerpt ? "原文节选" : "原文";
   $("source-link").href = current.source;

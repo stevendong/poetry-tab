@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import {
   normalizeOnline,
   restoreOnline,
-  matchArt,
   createOnlineClient,
   API_URL,
   resolveFavorite,
@@ -55,11 +54,11 @@ function memory(initial = {}) {
 const response = (value) =>
   new Response(JSON.stringify(value), { status: 200 });
 
-test("online result carries real full text, translation, provider and semantic art", () => {
+test("online result without dedicated art carries text and uses the default background", () => {
   const quote = normalizeOnline(fixture(), context);
   assert.equal(quote.id, "online:autumn-thought");
   assert.deepEqual(quote.lines, ["洛阳城里见秋风", "欲作家书意万重"]);
-  assert.equal(quote.art, "homesick-moon");
+  assert.equal(quote.art, null);
   assert.equal(quote.artExact, false);
   assert.equal(quote.meaningHeading, "作品译文");
   assert.ok(!("token" in quote));
@@ -110,13 +109,16 @@ test("invalid, oversized and unrelated original responses are rejected", () => {
   );
   assert.deepEqual(quote.tags, ["秋"]);
 });
-test("snapshots rebuild safe source links and whitelist illustration names", () => {
+test("snapshots rebuild safe source links and ignore untrusted illustration metadata", () => {
   const quote = normalizeOnline(fixture(), context);
   assert.equal(
     restoreOnline({ ...quote, source: "javascript:alert(1)" }).source,
     quote.source,
   );
-  assert.equal(restoreOnline({ ...quote, art: "../../secret" }), null);
+  assert.equal(
+    restoreOnline({ ...quote, art: "../../secret", artExact: true }).art,
+    null,
+  );
   assert.equal(restoreOnline({ ...quote, id: "__proto__" }), null);
   assert.equal(resolveFavorite("spring-dawn").id, "spring-dawn");
   assert.equal(
@@ -124,12 +126,34 @@ test("snapshots rebuild safe source links and whitelist illustration names", () 
     quote.content,
   );
 });
-test("semantic matching gives snow, desert and lotus precedence over the current season", () => {
-  assert.ok(
-    ["winter-river", "winter-blossom"].includes(matchArt("寒江雪", context)),
-  );
-  assert.equal(matchArt("大漠孤烟直", context), "desert");
-  assert.equal(matchArt("荷花映日", context), "summer-lotus");
+test("legacy caches and favorites discard borrowed art without losing the poem", () => {
+  const quote = normalizeOnline(fixture(), context);
+  for (const art of ["homesick-moon", null, undefined]) {
+    const restored = restoreOnline({ ...quote, art, artExact: true });
+    assert.equal(restored.art, null);
+    assert.equal(restored.artExact, false);
+    assert.equal(restored.content, quote.content);
+    assert.equal(restored.fullText, quote.fullText);
+    assert.equal(restored.meaning, quote.meaning);
+    assert.equal(
+      resolveFavorite(quote.id, { [quote.id]: { ...quote, art } }).art,
+      null,
+    );
+  }
+});
+test("restoring an exact match derives art from the poem rather than its saved path", () => {
+  const local = QUOTES.find((q) => q.id === "winter-river");
+  const restored = restoreOnline({
+    id: "online:known-favorite",
+    content: local.lines.join("，"),
+    title: local.title,
+    author: local.author,
+    fullText: local.fullText,
+    art: "../../secret",
+    artExact: false,
+  });
+  assert.equal(restored.art, local.art);
+  assert.equal(restored.artExact, true);
 });
 test("client persists and reuses anonymous marker in header, without exposing it to UI", async () => {
   let clock = 10000;

@@ -2,6 +2,7 @@ import { chromium } from "playwright";
 import assert from "node:assert/strict";
 import { mkdtemp, rm, mkdir, writeFile } from "node:fs/promises";
 import { QUOTES } from "../extension/quotes.js";
+import { normalizeOnline } from "../extension/online.js";
 
 const root = new URL("../", import.meta.url).pathname;
 const profile = await mkdtemp("/tmp/yijian-online-");
@@ -39,12 +40,34 @@ const fixture = {
   },
 };
 async function ready(page) {
-  await page.waitForSelector("#art.loaded");
   await page.waitForFunction(
     () =>
       document.getElementById("poetry").getAttribute("aria-busy") === "false",
     null,
     { timeout: 15000 },
+  );
+  await page.waitForFunction(() => {
+    const art = document.getElementById("art");
+    return (
+      document.body.dataset.quote &&
+      (document.body.dataset.background === "default"
+        ? art.hidden && !art.hasAttribute("src")
+        : art.classList.contains("loaded") && !art.hidden)
+    );
+  });
+}
+async function assertDefaultBackground(page) {
+  assert.equal(await page.locator("#art").getAttribute("src"), null);
+  assert.ok(await page.locator("#art").isHidden());
+  assert.equal(
+    await page
+      .locator("#art")
+      .evaluate((image) => image.classList.contains("loaded")),
+    false,
+  );
+  assert.equal(
+    await page.locator("body").getAttribute("data-background"),
+    "default",
   );
 }
 async function reset(worker, payload = fixture, mode = "ok") {
@@ -153,12 +176,16 @@ try {
     await page.locator("#verse").innerText(),
     "洛阳城里见秋风\n欲作家书意万重",
   );
-  assert.equal(
-    await page.locator("#art").getAttribute("src"),
-    "assets/art/homesick-moon.webp",
+  await assertDefaultBackground(page);
+  await page.evaluate(() => document.fonts.ready);
+  await page.locator("#poetry").evaluate((element) =>
+    Promise.all(element.getAnimations().map((animation) => animation.finished)),
   );
+  await page.screenshot({
+    path: root + "artifacts/online-default-background.png",
+  });
   pass(
-    "Online recommendation is preferred and receives a semantic illustration",
+    "Online recommendation without dedicated artwork uses the default background",
   );
   await page.locator("#read-button").click();
   assert.equal(
@@ -174,11 +201,11 @@ try {
     fixture.data.origin.content.join("\n"),
   );
   assert.ok(await page.locator("#appreciation-section").isHidden());
-  assert.match(await page.locator("#art-caption").textContent(), /已有插画库/);
+  assert.equal(await page.locator("#art-caption").textContent(), "默认背景");
   await page.screenshot({ path: root + "artifacts/online-reading.png" });
   await page.keyboard.press("Escape");
   pass(
-    "Online original, provider translation and illustration provenance are clearly displayed",
+    "Online original, provider translation and default background are clearly displayed",
   );
   await page.locator("#favorite-button").click();
   await page.waitForFunction(
@@ -302,6 +329,29 @@ try {
   assert.match(await page.locator("#art-caption").textContent(), /该句/);
   await page.keyboard.press("Escape");
   pass("Exact local match reuses its dedicated art and explanation");
+  // Existing favorites must stop displaying their former borrowed image.
+  await worker.evaluate(async (quote) => {
+    quote.art = "homesick-moon";
+    quote.artExact = true;
+    await chrome.storage.local.set({
+      favorites: [quote.id],
+      favoriteSnapshots: { [quote.id]: quote },
+    });
+  }, normalizeOnline(fixture));
+  await page.locator("#library-button").click();
+  await page.locator(".saved-quote").filter({ hasText: "洛阳城里" }).click();
+  await assertDefaultBackground(page);
+  await reset(worker, known);
+  await page.locator("#next-button").click();
+  await ready(page);
+  assert.equal(
+    await page.locator("#art").getAttribute("src"),
+    "assets/art/winter-river.webp",
+  );
+  assert.ok(await page.locator("#art").isVisible());
+  pass(
+    "Legacy favorite removes the previous image; returning to an illustrated poem restores its image",
+  );
   await page.locator("#settings-button").click();
   await page.locator("#online-enabled").uncheck();
   await page.keyboard.press("Escape");
@@ -394,7 +444,10 @@ try {
     await restart.locator("#verse").innerText(),
     "洛阳城里见秋风\n欲作家书意万重",
   );
-  pass("Online favorite survives browser restart and true offline mode");
+  await assertDefaultBackground(restart);
+  pass(
+    "Online favorite survives browser restart and true offline mode with the default background",
+  );
   assert.deepEqual(errors, []);
   await writeFile(
     root + "artifacts/online-browser-results.json",

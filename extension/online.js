@@ -1,46 +1,10 @@
 import { QUOTES } from "./quotes.js";
-import { scoreQuote } from "./context.js";
 
 export const API_URL = "https://v2.jinrishici.com/one.json";
 export const REQUEST_TIMEOUT = 4000;
 const clean = (value, limit = 200) =>
   typeof value === "string" ? value.trim().slice(0, limit) : "";
 const normalized = (value) => value.replace(/[\s\p{P}\p{S}]/gu, "");
-const ART_HINTS = {
-  "spring-dawn": ["春眠", "啼鸟", "晓", "鸟"],
-  "spring-river": ["桃花", "鸭", "春江", "竹"],
-  "spring-moon": ["潮", "海上", "江月"],
-  "summer-lotus": ["莲叶", "荷花", "莲", "荷"],
-  "summer-pond": ["蜻蜓", "小荷", "池"],
-  "summer-field": ["稻", "蛙", "田", "丰年"],
-  "autumn-fruit": ["橙", "橘", "果", "菊"],
-  "autumn-maple": ["枫", "霜叶", "红叶"],
-  "autumn-stream": ["松", "清泉", "月", "溪"],
-  "winter-blossom": ["梨花", "雪", "霜"],
-  "winter-river": ["寒江", "钓", "孤舟", "雪"],
-  "winter-tea": ["火炉", "新醅", "酒"],
-  clouds: ["云", "山", "流水"],
-  desert: ["大漠", "沙", "落日", "孤烟", "塞"],
-  "red-cliff": ["赤壁", "泛舟", "江", "清风"],
-  forest: ["林", "幽香", "树", "野芳"],
-  "homesick-moon": ["故乡", "乡", "家书", "思归", "月光"],
-};
-export function matchArt(content, context) {
-  let best = "clouds",
-    bestScore = -1;
-  for (const quote of QUOTES) {
-    const semantic = ART_HINTS[quote.art].reduce(
-      (sum, word) => sum + (content.includes(word) ? 20 + word.length : 0),
-      0,
-    );
-    const score = semantic + scoreQuote(quote, context);
-    if (score > bestScore) {
-      best = quote.art;
-      bestScore = score;
-    }
-  }
-  return best;
-}
 function sourceUrl(title, author) {
   return (
     "https://zh.wikisource.org/w/index.php?search=" +
@@ -59,7 +23,7 @@ function linesFrom(content) {
         parts.slice(Math.ceil(parts.length / 2)).join("，"),
       ];
 }
-export function normalizeOnline(payload, context) {
+export function normalizeOnline(payload) {
   if (
     payload?.status !== "success" ||
     !payload.data ||
@@ -124,7 +88,7 @@ export function normalizeOnline(payload, context) {
     meaning: exact?.meaning || translations,
     meaningHeading: exact ? "句意" : "作品译文",
     appreciation: exact?.appreciation || "",
-    art: exact?.art || matchArt(content, context),
+    art: exact?.art || null,
     artExact: Boolean(exact),
     source: exact?.source || sourceUrl(title, author),
     sourceLabel: "今日诗词",
@@ -143,8 +107,7 @@ export function restoreOnline(value) {
   const content = clean(value.content, 200),
     title = clean(value.title),
     author = clean(value.author);
-  const art = QUOTES.find((q) => q.art === value.art)?.art;
-  if (!content || !title || !author || !art || !clean(value.fullText, 30000))
+  if (!content || !title || !author || !clean(value.fullText, 30000))
     return null;
   const exact = QUOTES.find(
     (q) =>
@@ -163,7 +126,7 @@ export function restoreOnline(value) {
     meaning: exact?.meaning || clean(value.meaning, 30000),
     meaningHeading: exact ? "句意" : "作品译文",
     appreciation: exact?.appreciation || "",
-    art: exact?.art || art,
+    art: exact?.art || null,
     artExact: Boolean(exact),
     source: exact?.source || sourceUrl(title, author),
     sourceLabel: "今日诗词",
@@ -227,7 +190,7 @@ export function createOnlineClient(
           const text = await response.text();
           if (text.length > 262144) throw new Error("Response too large");
           const payload = JSON.parse(text);
-          const quote = normalizeOnline(payload, context);
+          const quote = normalizeOnline(payload);
           // Keep the anonymous marker only in local storage, never in a URL or displayed data.
           if (
             typeof payload.token === "string" &&
