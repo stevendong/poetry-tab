@@ -6,7 +6,9 @@
 
 设计、安装说明、内容来源与验收记录以 [Notion 项目页面](https://www.notion.so/3f92dbec685c81fa87bbf6bf606e2844) 为准。
 
-本地安装：打开 `chrome://extensions`，开启开发者模式，点击「加载已解压的扩展程序」，选择本项目的 `extension` 文件夹。也可以解压 `dist/poetry-tab-v0.2.0.zip` 后加载。
+商品文案、隐私政策、审核说明、商店图片与安装包见 [Notion 上架材料子页面](https://www.notion.so/3f92dbec685c81e28dd1f8d2f4fb4e4e)。运行 `npm run pack` 后，可用 `node scripts/store-materials.mjs` 从真实扩展生成商店图片；需要 Chrome for Testing 和可访问的今日诗词 API，可通过 `CHROME_PATH` 指定浏览器。
+
+本地安装：打开 `chrome://extensions`，开启开发者模式，点击「加载已解压的扩展程序」，选择本项目的 `extension` 文件夹。也可以解压 `dist/poetry-tab-v0.2.1.zip` 后加载。
 
 开发命令：`npm ci`、`npm test`、`npm run check`、`npm run test:browser`、`npm run test:calendar`、`npm run test:online`、`npm run pack`。`npm run preview` 提供本机预览（无需开发依赖），扩展安装本身无需 Node.js。
 
