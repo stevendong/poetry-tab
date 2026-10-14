@@ -1,17 +1,23 @@
 {
   "manifest_version": 3,
   "name": "一笺 · 诗意新标签页",
-  "version": "0.1.0",
-  "description": "随时间与四季，遇见一句诗词或古文，展开一幅 AI 意境插画。离线可用，收藏与设置保存在本机。",
+  "version": "0.2.0",
+  "description": "随时间与四季遇见诗意：今日诗词在线推荐，17 组离线诗画兜底，收藏与设置保存在本机。",
   "permissions": ["storage"],
-  "background": { "service_worker": "background.js", "type": "module" },
-  "chrome_url_overrides": { "newtab": "newtab.html" },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
   "icons": {
     "16": "assets/icons/icon16.png",
     "48": "assets/icons/icon48.png",
     "128": "assets/icons/icon128.png"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'none'; connect-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'none'"
-  }
+    "extension_pages": "script-src 'self'; object-src 'none'; connect-src 'self' https://v2.jinrishici.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'none'"
+  },
+  "host_permissions": ["https://v2.jinrishici.com/*"]
 }

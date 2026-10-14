@@ -719,3 +719,27 @@ input[type="range"] {
     transition: none !important;
   }
 }
+
+.content-source {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  opacity: 0.72;
+  margin: 12px 0 0;
+  max-width: 650px;
+  line-height: 1.6;
+}
+.long-verse h1 {
+  font-size: clamp(24px, 2.7vw, 42px);
+  letter-spacing: 0.08em;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 800px) {
+  .long-verse h1 {
+    font-size: clamp(23px, 4vw, 32px);
+  }
+}
+@media (max-height: 650px) {
+  .long-verse h1 {
+    font-size: 28px;
+  }
+}

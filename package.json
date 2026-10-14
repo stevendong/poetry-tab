@@ -1,6 +1,6 @@
 {
   "name": "yijian-poetry-tab",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "一笺 — 随时令而来的诗意新标签页",
@@ -9,7 +9,8 @@
     "test:browser": "node tests/browser.mjs",
     "check": "node scripts/check.mjs",
     "pack": "node scripts/pack.mjs",
-    "preview": "node scripts/preview.mjs"
+    "preview": "node scripts/preview.mjs",
+    "test:online": "node tests/browser-online.mjs"
   },
   "devDependencies": {
     "playwright": "1.64.0"

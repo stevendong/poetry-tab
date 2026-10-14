@@ -60,6 +60,9 @@ try {
     (await browser.waitForEvent("serviceworker", { timeout: 15000 }));
   const extensionId = new URL(worker.url()).host;
   assert.ok(extensionId);
+  await worker.evaluate(async () =>
+    chrome.storage.local.set({ settings: { onlineEnabled: false } }),
+  );
   pass("Actual MV3 service worker loaded");
   const page = await browser.newPage();
   observe(page);
@@ -259,6 +262,7 @@ try {
   await worker.evaluate(async () =>
     chrome.storage.local.set({
       settings: {
+        onlineEnabled: false,
         hemisphere: "north",
         showClock: true,
         showMeaning: false,

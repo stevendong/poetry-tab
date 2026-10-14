@@ -1,4 +1,5 @@
 export const DEFAULT_SETTINGS = {
+  onlineEnabled: true,
   hemisphere: "north",
   showClock: true,
   showMeaning: false,
@@ -8,6 +9,8 @@ export const DEFAULT_SETTINGS = {
 export function sanitizeSettings(value = {}) {
   value = value && typeof value === "object" ? value : {};
   return {
+    onlineEnabled:
+      typeof value.onlineEnabled === "boolean" ? value.onlineEnabled : true,
     hemisphere: value.hemisphere === "south" ? "south" : "north",
     showClock: typeof value.showClock === "boolean" ? value.showClock : true,
     showMeaning:
@@ -31,6 +34,13 @@ export const storage = {
     } catch {
       return fallback;
     }
+  },
+  async setMany(values) {
+    if (globalThis.chrome?.storage?.local)
+      await chrome.storage.local.set(values);
+    else
+      for (const [key, value] of Object.entries(values))
+        localStorage.setItem(`yijian:${key}`, JSON.stringify(value));
   },
   async set(key, value) {
     if (globalThis.chrome?.storage?.local)

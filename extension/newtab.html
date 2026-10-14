@@ -6,7 +6,7 @@
     <meta name="color-scheme" content="dark light" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="script-src 'self'; object-src 'none'; connect-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'none'"
+      content="script-src 'self'; object-src 'none'; connect-src 'self' https://v2.jinrishici.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'none'"
     />
     <title>一笺 · 诗意新标签页</title>
     <link rel="icon" href="assets/icons/icon48.png" />
@@ -81,6 +81,7 @@
         </div>
         <h1 id="verse"><span>一笺诗意</span><span>与时光相遇</span></h1>
         <p class="byline" id="byline"></p>
+        <p id="content-source" class="content-source" aria-live="polite"></p>
         <p class="inline-meaning" id="inline-meaning" hidden></p>
         <button class="reading-link" id="read-button" type="button">
           读懂这一句 <svg class="icon"><use href="#i-arrow" /></svg>
@@ -150,10 +151,10 @@
       <p class="sheet-byline" id="reading-byline"></p>
       <div class="reading-verse" id="reading-verse"></div>
       <section>
-        <h3>句意</h3>
+        <h3 id="meaning-heading">句意</h3>
         <p id="meaning"></p>
       </section>
-      <section>
+      <section id="appreciation-section">
         <h3>意境</h3>
         <p id="appreciation"></p>
       </section>
@@ -162,11 +163,14 @@
         <p id="fulltext"></p>
       </section>
       <div class="sheet-foot">
-        <span>插画为 AI 意境创作</span
+        <span id="art-caption">插画为 AI 意境创作</span
         ><a id="source-link" target="_blank" rel="noopener noreferrer"
           >查阅原文出处 ↗</a
         >
       </div>
+      <p id="provider-note" class="privacy-note" hidden>
+        文字与作品译文由今日诗词提供；意境配图选自已有插画库。
+      </p>
     </dialog>
     <dialog id="library-dialog" class="sheet" aria-labelledby="library-title">
       <div class="sheet-top">
@@ -193,6 +197,16 @@
       </div>
       <h2 id="settings-title">偏好设置</h2>
       <form id="settings-form">
+        <label class="setting-row" for="online-enabled"
+          ><span
+            ><strong>在线诗词推荐</strong
+            ><small>优先今日诗词，断网时使用离线精选</small></span
+          ><input
+            id="online-enabled"
+            name="onlineEnabled"
+            type="checkbox"
+            class="switch"
+        /></label>
         <label class="setting-row" for="hemisphere"
           ><span
             ><strong>所在半球</strong
@@ -240,10 +254,11 @@
             step="5"
         /></label>
         <p class="privacy-note">
-          设置自动保存。按本机时区选句；四季以立春、立夏、立秋、立冬划分，南半球相反。节气名称沿用中国传统，交界时刻采用近似计算。
+          设置自动保存。时钟与离线选句使用本机时区；离线四季以立春、立夏、立秋、立冬划分，南半球相反。在线选句由今日诗词服务推荐。节气名称沿用中国传统，交界时刻采用近似计算。
         </p>
         <p class="privacy-note">
-          内置 17 组诗词、古文与 AI 插画。无需联网、账号或定位。按空格换一句，按
+          内置 17 组离线诗画。在线推荐由今日诗词提供，会依据 IP
+          等信息推荐；关闭在线推荐后仅使用离线内容。无需账号或定位权限。按空格换一句，按
           Esc 关闭面板。
         </p>
       </form>
