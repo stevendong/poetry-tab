@@ -11,6 +11,8 @@ import {
   setLanguage,
   getLanguage,
   locale,
+  chineseLocale,
+  chineseText,
   translateDocument,
   termLabel,
 } from "./i18n.js";
@@ -84,7 +86,12 @@ function updateClock() {
 function applySettings() {
   setLanguage(settings.language);
   translateDocument();
-  languagePicker.setLabels([t("autoLanguage"), "中文", "English"]);
+  languagePicker.setLabels([
+    t("autoLanguage"),
+    "简体中文",
+    "繁體中文",
+    "English",
+  ]);
   languagePicker.setValue(settings.language);
   document.documentElement.style.setProperty(
     "--shade",
@@ -139,26 +146,29 @@ function updateQuoteText() {
   $("content-source").title = t(hasArt ? "artHint" : "defaultBackground");
   const nodes = quote.lines.map((line) => {
     const span = document.createElement("span");
-    span.textContent = line;
+    span.textContent = chineseText(line);
     return span;
   });
   $("verse").replaceChildren(...nodes);
-  $("byline").textContent =
-    `${quote.dynasty} · ${quote.author}  /  《${quote.title}》`;
+  $("byline").textContent = chineseText(
+    `${quote.dynasty} · ${quote.author}  /  《${quote.title}》`,
+  );
   $("reason").textContent = fromLibrary
     ? t("fromLibrary")
     : online
-      ? (getLanguage() === "zh" && quote.tags?.join(" · ")) || t("forMoment")
+      ? (getLanguage() !== "en" &&
+          chineseText(quote.tags?.join(" · ") || "")) ||
+        t("forMoment")
       : `${t(quote.seasons.includes(context.season) ? context.season : "now")} · ${t(context.period)}`;
   $("inline-meaning").textContent = quote.meaning
     ? (quote.provider === "online" && quote.meaningHeading === "作品译文"
         ? t("translationPrefix")
         : "") +
-      quote.meaning.slice(0, 120) +
+      chineseText(quote.meaning.slice(0, 120)) +
       (quote.meaning.length > 120 ? "…" : "")
     : t("missingMeaning");
-  $("inline-meaning").lang = quote.meaning ? "zh-CN" : locale();
-  document.title = `${quote.lines.join("，")} · ${t("brand")}`;
+  $("inline-meaning").lang = quote.meaning ? chineseLocale() : locale();
+  document.title = `${chineseText(quote.lines.join("，"))} · ${t("brand")}`;
   updateFavorite();
   populateReading();
 }
@@ -265,17 +275,20 @@ async function nextQuote(options = {}) {
 
 function populateReading() {
   if (!current) return;
-  $("reading-title").textContent = current.title;
-  $("reading-byline").textContent =
-    `${current.dynasty} · ${current.author} · ${current.kind}`;
-  $("reading-verse").textContent = current.lines.join("，") + "。";
+  $("reading-title").textContent = chineseText(current.title);
+  $("reading-byline").textContent = chineseText(
+    `${current.dynasty} · ${current.author} · ${current.kind}`,
+  );
+  $("reading-verse").textContent = chineseText(current.lines.join("，") + "。");
   $("meaning-heading").textContent = t(
     current.meaningHeading === "作品译文" ? "translation" : "meaning",
   );
-  $("meaning").textContent = current.meaning || t("missingReading");
-  $("meaning").lang = current.meaning ? "zh-CN" : locale();
+  $("meaning").textContent = current.meaning
+    ? chineseText(current.meaning)
+    : t("missingReading");
+  $("meaning").lang = current.meaning ? chineseLocale() : locale();
   $("appreciation-section").hidden = !current.appreciation;
-  $("appreciation").textContent = current.appreciation || "";
+  $("appreciation").textContent = chineseText(current.appreciation || "");
   $("art-caption").textContent =
     current.art && (current.provider !== "online" || current.artExact)
       ? t("artCaption")
@@ -288,7 +301,7 @@ function populateReading() {
   $("provider-note").textContent = current.artExact
     ? t("providerExact")
     : t("providerNote");
-  $("fulltext").textContent = current.fullText;
+  $("fulltext").textContent = chineseText(current.fullText);
   $("fulltext-label").textContent = t(current.excerpt ? "excerpt" : "original");
   $("source-link").href = current.source;
 }
@@ -321,11 +334,11 @@ function populateLibrary() {
       button.type = "button";
       button.className = "saved-quote";
       const text = document.createElement("span");
-      text.lang = "zh-CN";
+      text.lang = chineseLocale();
       const strong = document.createElement("strong");
-      strong.textContent = quote.lines.join("，");
+      strong.textContent = chineseText(quote.lines.join("，"));
       const small = document.createElement("small");
-      small.textContent = `${quote.author} · ${quote.title}`;
+      small.textContent = chineseText(`${quote.author} · ${quote.title}`);
       text.append(strong, small);
       const arrow = document.createElement("span");
       arrow.textContent = "↗";
@@ -344,7 +357,8 @@ const refreshCalendar = initCalendar(openDialog);
 const languagePicker = createSelect($("language"), {
   options: [
     { value: "auto", label: t("autoLanguage") },
-    { value: "zh", label: "中文" },
+    { value: "zh", label: "简体中文" },
+    { value: "zh-TW", label: "繁體中文" },
     { value: "en", label: "English" },
   ],
   value: settings.language,

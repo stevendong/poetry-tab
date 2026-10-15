@@ -15,7 +15,7 @@ Yijian is a Chrome new tab extension that brings classical Chinese poetry, prose
 - **Read further:** Open the original text, explanation or translation, commentary, and source. Missing online translations are clearly indicated.
 - **Local favorites:** Saved poems remain readable offline. Favorites and preferences sync between tabs in the same browser profile.
 - **Calendar:** Click the date to browse Gregorian and Chinese lunar dates, zodiac years, and solar terms from 1900 to 2100.
-- **Chinese and English UI:** Follow the browser language or choose a language in settings. Poems and commentary remain in Chinese.
+- **Simplified Chinese, Traditional Chinese, and English UI:** Choose a language in Settings or follow the browser. Chinese options also switch the script of poems, commentary, favorites, and the calendar. Conversion works entirely offline; preferences save automatically and update open tabs.
 - **Reading preferences:** Choose your hemisphere, clock visibility, explanation display, text size, and background shade.
 
 <details>
@@ -87,7 +87,7 @@ The preview listens on `http://127.0.0.1:4173/` by default. Set `PORT` to choose
 | `npm run test:browser`  | Test the new tab page, offline mode, favorites, and settings               |
 | `npm run test:online`   | Test online recommendations, caching, fallback, and saved online poems     |
 | `npm run test:calendar` | Test calendar interaction, keyboard controls, and narrow layouts           |
-| `npm run test:language` | Test language switching, persistence, tab sync, and English layouts        |
+| `npm run test:language` | Test Chinese script and English switching, persistence, tab sync, and layouts |
 | `npm run pack`          | Create the extension ZIP, unpacked directory, and SHA-256 checksum         |
 
 ### Browser tests
@@ -121,7 +121,7 @@ npm run pack
 
 Output goes to `dist/`: `poetry-tab/` is the loadable extension directory, `poetry-tab-v<version>.zip` is the archive, and the adjacent `.sha256` file contains its checksum. The `dist/` directory is excluded from version control; generate it after downloading the source.
 
-The archive includes the project's MIT license and the font's OFL license.
+The archive includes the project's MIT license, the font's OFL license, and the MIT / Apache-2.0 licenses for OpenCC code and dictionaries.
 
 ### Project structure
 
@@ -131,7 +131,9 @@ extension/             Extension pages, worker, and local assets
   online.js            Online recommendations, cache, and saved snapshots
   context.js           Seasons and offline poem selection
   calendar*.js         Calendar data and interaction
-  i18n.js              Chinese and English UI messages
+  i18n.js              Simplified/Traditional Chinese and English UI and dates
+  chinese.js           Local Chinese script conversion for displayed poems
+  vendor/opencc/       OpenCC code, dictionaries, and licenses
   _locales/            Localized Chrome extension name and description
   assets/              Illustrations, fonts, and icons
 scripts/               Preview, validation, and packaging
@@ -154,6 +156,7 @@ The project uses the [MIT License](LICENSE). Third-party fonts, texts, and onlin
 | Offline poem originals                | Each entry in [`quotes.js`](extension/quotes.js) links to [Wikisource](https://zh.wikisource.org/)                                                                   |
 | Offline explanations and commentary   | Written for this project                                                                                                                                             |
 | Online poems and Chinese translations | Provided by the [Jinrishici API](https://www.jinrishici.com/)                                                                                                        |
+| Chinese script conversion             | [OpenCC JavaScript](https://github.com/nk2028/opencc-js) 1.4.2, bundled locally; see [provenance and licenses](extension/vendor/opencc/README.md) |
 | Illustrations                         | AI-assisted artwork; prompts and generation records are in [`prompts.json`](extension/assets/art/prompts.json)                                                       |
 | Poem font                             | Bundled Noto Serif SC subset, under the [SIL Open Font License 1.1](extension/assets/fonts/OFL.txt); see [`provenance.json`](extension/assets/fonts/provenance.json) |
 | English solar term names              | Based on the [Hong Kong Observatory calendar](https://www.hko.gov.hk/en/gts/time/24solarterms.htm)                                                                   |

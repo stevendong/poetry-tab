@@ -5,6 +5,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createPreviewServer } from "../scripts/preview.mjs";
+import { QUOTES } from "../extension/quotes.js";
+import { toTraditional } from "../extension/chinese.js";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const profile = await mkdtemp(join(tmpdir(), "yijian-language-"));
@@ -24,7 +26,8 @@ async function pickLanguage(page, value) {
   await page.locator(`#language-options [data-value='${value}']`).click();
   await page.waitForFunction(
     (value) =>
-      document.documentElement.lang === (value === "zh" ? "zh-CN" : "en-US"),
+      document.documentElement.lang ===
+      (value === "zh" ? "zh-CN" : value === "zh-TW" ? "zh-TW" : "en-US"),
     value,
   );
 }
@@ -114,7 +117,9 @@ async function verify(page, url, label) {
   );
   assert.equal(
     await page.locator("#fulltext-label").textContent(),
-    "Original text",
+    QUOTES.find((quote) => quote.id === quoteBefore).excerpt
+      ? "Excerpt"
+      : "Original text",
   );
   assert.match(
     await page.locator("#fulltext").textContent(),
@@ -219,6 +224,120 @@ async function verify(page, url, label) {
   await second.waitForFunction(() => document.documentElement.lang === "zh-CN");
   assert.equal(await second.locator("#calendar-title").textContent(), "万年历");
   assert.equal(await second.locator("#calendar-month").textContent(), "10月");
+  const originalId = await page.locator("body").getAttribute("data-quote");
+  const originalQuote = QUOTES.find((quote) => quote.id === originalId);
+  const originalArt = await page.locator("#art").getAttribute("src");
+  const originalSource = await page
+    .locator("#source-link")
+    .getAttribute("href");
+  const historyBefore = await page.evaluate(async () =>
+    globalThis.chrome?.runtime?.id
+      ? (await chrome.storage.local.get("history")).history
+      : JSON.parse(localStorage.getItem("yijian:history")),
+  );
+  await pickLanguage(page, "zh-TW");
+  await second.waitForFunction(() => document.documentElement.lang === "zh-TW");
+  assert.equal(await page.locator("#settings-title").textContent(), "偏好設置");
+  assert.equal(await page.locator(".brand-name").textContent(), "一箋");
+  assert.equal(await page.locator(".seal").textContent(), "箋");
+  assert.equal(
+    await page.locator("body").getAttribute("data-quote"),
+    originalId,
+  );
+  assert.equal(await page.locator("#art").getAttribute("src"), originalArt);
+  assert.equal(
+    await page.locator("#source-link").getAttribute("href"),
+    originalSource,
+  );
+  assert.equal(await page.locator("#verse").getAttribute("lang"), "zh-TW");
+  assert.equal(
+    await page.locator("#verse").innerText(),
+    toTraditional(originalQuote.lines.join("\n")),
+  );
+  assert.equal(
+    await page.locator("#fulltext").textContent(),
+    toTraditional(originalQuote.fullText),
+  );
+  assert.equal(
+    await page.locator("#meaning").textContent(),
+    toTraditional(originalQuote.meaning),
+  );
+  assert.equal(
+    await page.locator("#appreciation").textContent(),
+    toTraditional(originalQuote.appreciation),
+  );
+  assert.equal(
+    await page.locator("#reading-title").textContent(),
+    toTraditional(originalQuote.title),
+  );
+  assert.equal(await second.locator("#calendar-title").textContent(), "萬年曆");
+  assert.match(
+    await second.locator("#calendar-selected-lunar").textContent(),
+    /農曆/,
+  );
+  await second.locator("#calendar-month").click();
+  await second.locator("#calendar-month-options [data-value='2']").click();
+  assert.match(await second.locator("#calendar-terms").textContent(), /驚蟄/);
+  assert.equal(
+    await second.locator(".has-term .calendar-lunar").first().textContent(),
+    "驚蟄",
+  );
+  assert.match(
+    await second.locator(".has-term").first().getAttribute("aria-label"),
+    /農曆.*驚蟄/,
+  );
+  await page.waitForFunction(async () => {
+    const settings = globalThis.chrome?.runtime?.id
+      ? (await chrome.storage.local.get("settings")).settings
+      : JSON.parse(localStorage.getItem("yijian:settings"));
+    return settings?.language === "zh-TW";
+  });
+  assert.deepEqual(
+    await page.evaluate(async () =>
+      globalThis.chrome?.runtime?.id
+        ? (await chrome.storage.local.get("history")).history
+        : JSON.parse(localStorage.getItem("yijian:history")),
+    ),
+    historyBefore,
+  );
+  await page.screenshot({
+    path: root + `artifacts/language-${label}-traditional-settings.png`,
+    animations: "disabled",
+  });
+  await page.keyboard.press("Escape");
+  await page.locator("#library-button").click();
+  assert.equal(await page.locator("#library-title").textContent(), "收藏冊");
+  assert.equal(
+    await page.locator(".saved-quote span[lang]").getAttribute("lang"),
+    "zh-TW",
+  );
+  assert.equal(
+    await page.locator(".saved-quote strong").textContent(),
+    toTraditional(verseBefore.replaceAll("\n", "，")),
+  );
+  await page.keyboard.press("Escape");
+  await page.locator("#read-button").click();
+  assert.ok(await page.locator("#reading-dialog").isVisible());
+  assert.ok(await page.locator("#reading-dialog").evaluate(
+    (dialog) => dialog.scrollWidth <= dialog.clientWidth,
+  ));
+  await page.screenshot({
+    path: root + `artifacts/language-${label}-traditional-reading.png`,
+    animations: "disabled",
+  });
+  await page.keyboard.press("Escape");
+  await second.reload();
+  await ready(second);
+  assert.equal(await second.locator("html").getAttribute("lang"), "zh-TW");
+  assert.equal(await second.locator("#verse").getAttribute("lang"), "zh-TW");
+  await second.locator("#almanac-button").click();
+  await page.locator("#settings-button").click();
+  await pickLanguage(page, "zh");
+  await second.waitForFunction(() => document.documentElement.lang === "zh-CN");
+  assert.equal(
+    await page.locator("#verse").innerText(),
+    originalQuote.lines.join("\n"),
+  );
   await pickLanguage(page, "auto");
   await second.waitForFunction(() => document.documentElement.lang === "en-US");
   await second.close();
@@ -228,7 +347,7 @@ async function verify(page, url, label) {
   assert.equal(await page.locator("#term-label").textContent(), "Cold Dew");
   assert.ok(await page.locator("#term-label").isVisible());
   console.log(
-    `PASS ${label}: English auto-detection, manual switch, original poems, saved language, favorites, calendar, keyboard, tab sync and narrow layouts`,
+    `PASS ${label}: English and Chinese script switching, poems, readings, favorites, calendar, persistence, keyboard, tab sync and narrow layouts`,
   );
 }
 try {
@@ -260,10 +379,19 @@ try {
     headless: true,
   });
   try {
-    const page = await chineseBrowser.newPage({ locale: "zh-CN" });
-    await page.goto(previewUrl);
-    await ready(page);
-    assert.equal(await page.locator("html").getAttribute("lang"), "zh-CN");
+    for (const [locale, expected] of [
+      ["zh-CN", "zh-CN"],
+      ["zh-TW", "zh-TW"],
+      ["zh-HK", "zh-TW"],
+      ["zh-Hant", "zh-TW"],
+    ]) {
+      const page = await chineseBrowser.newPage({ locale });
+      await page.goto(previewUrl);
+      await ready(page);
+      assert.equal(await page.locator("html").getAttribute("lang"), expected);
+      assert.equal(await page.locator("#verse").getAttribute("lang"), expected);
+      await page.close();
+    }
   } finally {
     await chineseBrowser.close();
   }

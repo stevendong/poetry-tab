@@ -58,7 +58,7 @@
     <div class="page">
       <header class="masthead">
         <div class="brand">
-          <span class="seal" aria-hidden="true">笺</span>
+          <span class="seal" aria-hidden="true" data-i18n="seal">笺</span>
           <div>
             <span class="brand-name" data-i18n="brand">一笺</span
             ><span class="brand-subtitle" data-i18n="tagline"
@@ -94,12 +94,18 @@
           <span class="rule"></span
           ><span id="reason" data-i18n="loading">正在拾取此刻的诗意</span>
         </div>
-        <h1 id="verse" lang="zh-CN">
+        <h1 id="verse" lang="zh-CN" data-chinese>
           <span>一笺诗意</span><span>与时光相遇</span>
         </h1>
-        <p class="byline" id="byline" lang="zh-CN"></p>
+        <p class="byline" id="byline" lang="zh-CN" data-chinese></p>
         <p id="content-source" class="content-source" aria-live="polite"></p>
-        <p class="inline-meaning" id="inline-meaning" lang="zh-CN" hidden></p>
+        <p
+          class="inline-meaning"
+          id="inline-meaning"
+          lang="zh-CN"
+          data-chinese
+          hidden
+        ></p>
         <button class="reading-link" id="read-button" type="button">
           <span data-i18n="read">读懂这一句</span>
           <svg class="icon"><use href="#i-arrow" /></svg>
@@ -266,20 +272,25 @@
           <svg class="icon"><use href="#i-close" /></svg>
         </button>
       </div>
-      <h2 id="reading-title" lang="zh-CN"></h2>
-      <p class="sheet-byline" id="reading-byline" lang="zh-CN"></p>
-      <div class="reading-verse" id="reading-verse" lang="zh-CN"></div>
+      <h2 id="reading-title" lang="zh-CN" data-chinese></h2>
+      <p class="sheet-byline" id="reading-byline" lang="zh-CN" data-chinese></p>
+      <div
+        class="reading-verse"
+        id="reading-verse"
+        lang="zh-CN"
+        data-chinese
+      ></div>
       <section>
         <h3 id="meaning-heading" data-i18n="meaning">句意</h3>
-        <p id="meaning" lang="zh-CN"></p>
+        <p id="meaning" lang="zh-CN" data-chinese></p>
       </section>
       <section id="appreciation-section">
         <h3 data-i18n="appreciation">意境</h3>
-        <p id="appreciation" lang="zh-CN"></p>
+        <p id="appreciation" lang="zh-CN" data-chinese></p>
       </section>
       <section class="original">
         <h3 id="fulltext-label" data-i18n="original">原文</h3>
-        <p id="fulltext" lang="zh-CN"></p>
+        <p id="fulltext" lang="zh-CN" data-chinese></p>
       </section>
       <div class="sheet-foot">
         <span id="art-caption" data-i18n="artCaption">插画为 AI 意境创作</span
@@ -344,7 +355,9 @@
         <label class="setting-row" for="language">
           <span
             ><strong data-i18n="language">界面语言</strong
-            ><small data-i18n="languageHint">诗文与解读保留中文</small></span
+            ><small data-i18n="languageHint"
+              >中文选项同时切换诗文与解读的繁简体</small
+            ></span
           >
           <button
             id="language"

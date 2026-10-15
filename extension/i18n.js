@@ -1,8 +1,10 @@
 import { TERMS } from "./context.js";
+import { toTraditional, toSimplified } from "./chinese.js";
 
 export const MESSAGES = {
   zh: {
     brand: "一笺",
+    seal: "笺",
     pageTitle: "一笺 · 诗意新标签页",
     tagline: "打开一页，遇见诗意",
     loading: "正在拾取此刻的诗意",
@@ -70,7 +72,7 @@ export const MESSAGES = {
     closeSettings: "关闭设置",
     preferences: "偏好设置",
     language: "界面语言",
-    languageHint: "诗文与解读保留中文",
+    languageHint: "中文选项同时切换诗文与解读的繁简体",
     chooseLanguage: "选择界面语言",
     autoLanguage: "跟随浏览器",
     onlineEnabled: "在线诗词推荐",
@@ -114,6 +116,7 @@ export const MESSAGES = {
   },
   en: {
     brand: "Yijian",
+    seal: "笺",
     pageTitle: "Yijian · Poetry New Tab",
     tagline: "A moment of poetry",
     loading: "Finding a poem for this moment",
@@ -186,7 +189,7 @@ export const MESSAGES = {
     closeSettings: "Close settings",
     preferences: "Preferences",
     language: "Interface language",
-    languageHint: "Poems and commentary remain in Chinese",
+    languageHint: "Chinese options also set the script of poems and commentary",
     chooseLanguage: "Choose interface language",
     autoLanguage: "Browser default",
     onlineEnabled: "Online recommendations",
@@ -236,8 +239,13 @@ export function resolveLanguage(
   preference = "auto",
   browserLanguage = globalThis.navigator?.language || "zh-CN",
 ) {
-  if (preference === "zh" || preference === "en") return preference;
-  return browserLanguage.toLowerCase().startsWith("zh") ? "zh" : "en";
+  if (["zh", "zh-TW", "en"].includes(preference)) return preference;
+  const parts = browserLanguage.toLowerCase().split("-");
+  if (parts[0] !== "zh") return "en";
+  if (parts.includes("hans")) return "zh";
+  return parts.some((part) => ["hant", "tw", "hk", "mo"].includes(part))
+    ? "zh-TW"
+    : "zh";
 }
 export function setLanguage(preference) {
   language = resolveLanguage(preference);
@@ -246,16 +254,26 @@ export function getLanguage() {
   return language;
 }
 export function locale() {
-  return language === "en" ? "en-US" : "zh-CN";
+  return language === "en" ? "en-US" : chineseLocale();
+}
+export function chineseLocale() {
+  return language === "zh-TW" ? "zh-TW" : "zh-CN";
+}
+export function chineseText(text) {
+  return language === "zh-TW" ? toTraditional(text) : toSimplified(text);
 }
 export function t(key, values = {}) {
-  const text = MESSAGES[language][key] ?? MESSAGES.zh[key] ?? key;
-  return text.replace(/\{(\w+)\}/g, (match, name) =>
+  const text = MESSAGES[language]?.[key] ?? MESSAGES.zh[key] ?? key;
+  const formatted = text.replace(/\{(\w+)\}/g, (match, name) =>
     String(values[name] ?? match),
   );
+  return language === "zh-TW" ? toTraditional(formatted) : formatted;
 }
 export function translateDocument(root = document) {
   root.documentElement.lang = locale();
+  root.querySelectorAll("[data-chinese]").forEach((element) => {
+    element.lang = chineseLocale();
+  });
   for (const [attribute, target] of [
     ["data-i18n", null],
     ["data-i18n-title", "title"],
@@ -312,20 +330,23 @@ const EN_ANIMALS = [
   "Pig",
 ];
 export function termLabel(term) {
-  return language === "en" ? EN_TERMS[TERMS.indexOf(term)] || term : term;
+  return language === "en"
+    ? EN_TERMS[TERMS.indexOf(term)] || term
+    : chineseText(term);
 }
 export function monthLabel(month, style = "short") {
-  return language === "zh"
+  return language !== "en"
     ? `${month + 1}月`
     : new Intl.DateTimeFormat(locale(), { month: style }).format(
         new Date(2026, month, 1),
       );
 }
 export function yearLabel(year) {
-  return language === "zh" ? `${year}年` : String(year);
+  return language !== "en" ? `${year}年` : String(year);
 }
 export function lunarLabel(lunar, compact = false) {
-  if (language === "zh") return compact ? lunar.label : t("lunarDetail", lunar);
+  if (language !== "en")
+    return compact ? chineseText(lunar.label) : t("lunarDetail", lunar);
   const month = `${lunar.isLeap ? "Leap month" : "Month"} ${lunar.monthNumber}`;
   if (compact)
     return lunar.day === 1

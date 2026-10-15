@@ -19,6 +19,12 @@
     "Yijian Serif", "Noto Serif CJK SC", "Songti SC", "STSong", "SimSun", serif;
   color-scheme: dark;
 }
+:root:lang(zh-TW) {
+  font-family:
+    system-ui, -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
+  --serif:
+    "Noto Serif CJK TC", "Songti TC", "PMingLiU", "Yijian Serif", serif;
+}
 * {
   box-sizing: border-box;
 }

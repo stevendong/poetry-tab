@@ -15,7 +15,7 @@
 - **展开阅读**：查看原文、句意或作品译文、意境解读及出处；在线内容未提供译文时会明确提示。
 - **本地收藏**：喜欢的诗文保存在当前浏览器中，离线可读；收藏和设置在同一浏览器配置的标签页之间同步。
 - **万年历**：点击右上角日期，查看 1900—2100 年的公历、农历、生肖与节气，支持年月切换和返回今天。
-- **中英文界面**：默认跟随浏览器语言，也可手动选择中文或 English。诗文原文与解读保留中文。
+- **繁简中文与英文界面**：在「设置 → 界面语言」选择简体中文、繁體中文或 English，也可跟随浏览器。中文选项同时切换诗文、解读、收藏和万年历的繁简体，设置自动保存并同步到已打开的标签页；文字转换完全离线完成。
 - **阅读偏好**：可调整所在半球、时钟、句意显示、字号及背景遮罩。
 
 <details>
@@ -87,7 +87,7 @@ npm run preview
 | `npm run test:browser`  | 验证新标签页、离线模式、收藏和设置             |
 | `npm run test:online`   | 验证在线推荐、缓存、失败回退和在线收藏         |
 | `npm run test:calendar` | 验证日历、键盘操作与窄窗口布局                 |
-| `npm run test:language` | 验证语言切换、持久化、标签页同步与英文布局     |
+| `npm run test:language` | 验证繁简体与英文切换、持久化、标签页同步和布局 |
 | `npm run pack`          | 生成扩展 ZIP、解压目录及 SHA-256 校验文件      |
 
 ### 浏览器测试
@@ -121,7 +121,7 @@ npm run pack
 
 输出位于 `dist/`：`poetry-tab/` 为可加载的扩展目录，`poetry-tab-v<version>.zip` 为压缩包，旁边的 `.sha256` 文件用于校验。`dist/` 不纳入版本控制，下载源码后需自行生成。
 
-压缩包包含项目的 MIT 许可证和字体的 OFL 许可证。
+压缩包包含项目的 MIT 许可证、字体的 OFL 许可证，以及 OpenCC 转换代码与词典的 MIT / Apache-2.0 许可证。
 
 ### 项目结构
 
@@ -131,7 +131,9 @@ extension/             扩展页面、后台和本地资源
   online.js            在线推荐、缓存与收藏快照
   context.js           时令判断与离线选句
   calendar*.js         日历数据与交互
-  i18n.js              中英文界面文案
+  i18n.js              繁简中文与英文界面、日期本地化
+  chinese.js           诗文显示文字的本地繁简转换
+  vendor/opencc/       OpenCC 转换代码、词典及许可证
   _locales/            Chrome 扩展名称与描述的本地化
   assets/              插画、字体及图标
 scripts/               预览、检查与打包脚本
@@ -154,6 +156,7 @@ docs/images/           README 界面截图
 | 离线诗文原文       | 每条记录均附 [维基文库](https://zh.wikisource.org/) 出处，见 [`quotes.js`](extension/quotes.js)                                                                       |
 | 离线句意与意境解读 | 项目编写                                                                                                                                                              |
 | 在线诗文与作品译文 | [今日诗词](https://www.jinrishici.com/)，由其 API 提供                                                                                                                |
+| 繁简体转换         | [OpenCC JavaScript](https://github.com/nk2028/opencc-js) 1.4.2，代码与词典随扩展打包；[来源与许可证](extension/vendor/opencc/README.md) |
 | 意境插画           | AI 辅助生成；提示词与生成记录见 [`prompts.json`](extension/assets/art/prompts.json)                                                                                   |
 | 诗文字体           | Noto Serif SC，本地子集字体；遵循 [SIL Open Font License 1.1](extension/assets/fonts/OFL.txt)，来源记录见 [`provenance.json`](extension/assets/fonts/provenance.json) |
 | 英文节气名称       | 参考[香港天文台](https://www.hko.gov.hk/en/gts/time/24solarterms.htm)                                                                                                 |

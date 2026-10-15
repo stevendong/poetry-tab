@@ -233,6 +233,70 @@ try {
   });
   assert.deepEqual(saved.ids, ["online:test-autumn"]);
   assert.equal(saved.content, fixture.data.content);
+  // Script switching changes only the view, including saved online snapshots.
+  const originalOnlineState = await worker.evaluate(
+    async () =>
+      await chrome.storage.local.get([
+        "onlineState",
+        "favoriteSnapshots",
+        "history",
+      ]),
+  );
+  await page.locator("#settings-button").click();
+  await page.locator("#language").click();
+  await page.locator("#language-options [data-value='zh-TW']").click();
+  assert.equal(
+    await page.locator("#verse").innerText(),
+    "洛陽城裡見秋風\n欲作家書意萬重",
+  );
+  assert.equal(
+    await page.locator("#byline").textContent(),
+    "唐代 · 張籍  /  《秋思》",
+  );
+  assert.equal(await page.locator("#verse").getAttribute("lang"), "zh-TW");
+  assert.equal(
+    await page.locator("#meaning").textContent(),
+    "一年一度的秋風，又吹到了洛陽城中。想寫封家書，心中有許多話要說。",
+  );
+  assert.equal(
+    await page.locator("#fulltext").textContent(),
+    "洛陽城裡見秋風，欲作家書意萬重。\n復恐匆匆說不盡，行人臨發又開封。",
+  );
+  assert.match(await page.title(), /洛陽城裡見秋風.*一箋/);
+  await page.keyboard.press("Escape");
+  await page.locator("#library-button").click();
+  assert.equal(
+    await page.locator(".saved-quote strong").textContent(),
+    "洛陽城裡見秋風，欲作家書意萬重",
+  );
+  await page.locator(".saved-quote").click();
+  assert.equal(
+    await page.locator("#verse").innerText(),
+    "洛陽城裡見秋風\n欲作家書意萬重",
+  );
+  await page.locator("#settings-button").click();
+  await page.locator("#language").click();
+  await page.locator("#language-options [data-value='zh']").click();
+  await page.keyboard.press("Escape");
+  assert.equal(
+    await page.locator("#verse").innerText(),
+    "洛阳城里见秋风\n欲作家书意万重",
+  );
+  assert.equal(await worker.evaluate(() => globalThis.__testCalls), 1);
+  assert.deepEqual(
+    await worker.evaluate(
+      async () =>
+        await chrome.storage.local.get([
+          "onlineState",
+          "favoriteSnapshots",
+          "history",
+        ]),
+    ),
+    originalOnlineState,
+  );
+  pass(
+    "Online poems, translations and favorites switch scripts without changing stored content or making requests",
+  );
   await page.locator("#next-button").click();
   await ready(page);
   assert.ok(

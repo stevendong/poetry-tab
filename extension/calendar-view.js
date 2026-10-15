@@ -69,12 +69,12 @@ export function initCalendar(openDialog) {
     yearPicker.setValue(year);
     monthPicker.setValue(month);
     $("calendar-month-title").textContent =
-      getLanguage() === "zh"
+      getLanguage() !== "en"
         ? `${year}年${month + 1}月`
         : `${monthLabel(month, "long")} ${year}`;
     document.querySelectorAll(".calendar-weekdays span").forEach((span, i) => {
       span.textContent =
-        getLanguage() === "zh"
+        getLanguage() !== "en"
           ? ["一", "二", "三", "四", "五", "六", "日"][i]
           : new Intl.DateTimeFormat(locale(), { weekday: "short" }).format(
               new Date(2026, 9, 5 + i, 12),
@@ -113,15 +113,15 @@ export function initCalendar(openDialog) {
         label.textContent = term
           ? getLanguage() === "en"
             ? t("termShort")
-            : term
+            : termLabel(term)
           : lunarLabel(lunar, true);
         if (term) button.title = termLabel(term);
         button.append(number, label);
         button.addEventListener("click", () => choose(date, true));
         if (inMonth && term)
           terms.push(
-            getLanguage() === "zh"
-              ? `${term} ${date.getDate()}日`
+            getLanguage() !== "en"
+              ? `${termLabel(term)} ${date.getDate()}日`
               : `${termLabel(term)} ${monthLabel(month)} ${date.getDate()}`,
           );
         return button;
