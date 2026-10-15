@@ -2,9 +2,11 @@
   "manifest_version": 3,
   "name": "__MSG_extensionName__",
   "default_locale": "zh_CN",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "__MSG_extensionDescription__",
-  "permissions": ["storage"],
+  "permissions": [
+    "storage"
+  ],
   "background": {
     "service_worker": "background.js",
     "type": "module"
@@ -18,7 +20,13 @@
     "128": "assets/icons/icon128.png"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'none'; connect-src 'self' https://v2.jinrishici.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'none'"
+    "extension_pages": "script-src 'self'; object-src 'none'; connect-src 'self' https: http:; img-src 'self' data: https: http:; media-src 'self' https: http:; style-src 'self' 'unsafe-inline'; base-uri 'none'"
   },
-  "host_permissions": ["https://v2.jinrishici.com/*"]
+  "host_permissions": [
+    "https://v2.jinrishici.com/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ]
 }

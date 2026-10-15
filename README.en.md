@@ -60,11 +60,11 @@ The header shows a solar term only on its date. Dates and the clock follow your 
 
 ## Data and privacy
 
-- The extension requests only the `storage` permission and host access to `https://v2.jinrishici.com/*`.
+- The extension uses `storage` and default host access to Jinrishici. Custom sites use optional host permissions, requested for the chosen site when you save its API.
 - Online recommendations are enabled by default. Requests go to Jinrishici, which can receive your IP address and other network information. The anonymous client identifier and recent recommendation cache are stored locally.
 - Turning online recommendations off uses the built-in collection and stops new poem API requests.
 - Favorites and settings use `chrome.storage.local`; the web preview uses `localStorage`. They do not sync to other browsers through an account.
-- Fonts and artwork are bundled, and the calendar works offline. No account or location permission is required.
+- Built-in fonts and artwork are bundled. The calendar and saved text work offline; custom images and videos require a connection. No account or location permission is required.
 
 ## Development
 
@@ -160,3 +160,11 @@ The project uses the [MIT License](LICENSE). Third-party fonts, texts, and onlin
 | Illustrations                         | AI-assisted artwork; prompts and generation records are in [`prompts.json`](extension/assets/art/prompts.json)                                                       |
 | Poem font                             | Bundled Noto Serif SC subset, under the [SIL Open Font License 1.1](extension/assets/fonts/OFL.txt); see [`provenance.json`](extension/assets/fonts/provenance.json) |
 | English solar term names              | Based on the [Hong Kong Observatory calendar](https://www.hko.gov.hk/en/gts/time/24solarterms.htm)                                                                   |
+
+## Custom poetry APIs (v0.3.0)
+
+In Settings, choose **poetry-service** (pre-filled with `https://poetry-api.nabulalogic.com`) or **Custom JSON API**, enter the address, and click **Save API and connect**. Chrome requests access only to the selected API site. Poetry Service accepts a base URL or the full recommendation endpoint and supplies original works, interpretations, image backgrounds and muted video backgrounds. API failures use the 17 bundled offline poems.
+
+A custom GET endpoint accepts `content` (or `lines`), `title` and `author`, with optional `fullText`, `meaning`, `appreciation`, `imageUrl`, or `videoUrl` + `posterUrl`. Records can be returned directly or under `quote` / `data`. Saved text remains readable offline; remote backgrounds require a connection. Custom requests omit cookies and the Jinrishici client marker. API and media providers receive connection data; Poetry Service also receives season, time of day, background preference, recent poem IDs and solar term (Northern Hemisphere only).
+
+`npm run test:custom` tests the real Chrome host permission prompt, local JSON fixtures, images, video and failure paths. It requires Linux with Xvfb, xdotool, ImageMagick and FFmpeg. Add `LIVE_API=1` to verify the public production Poetry Service and CDN image. Full interface and acceptance records are maintained on the [Notion project page](https://www.notion.so/3f92dbec685c81fa87bbf6bf606e2844).

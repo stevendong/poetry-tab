@@ -1,6 +1,6 @@
 {
   "name": "yijian-poetry-tab",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -13,7 +13,8 @@
     "check": "node scripts/check.mjs",
     "pack": "node scripts/pack.mjs",
     "preview": "node scripts/preview.mjs",
-    "test:online": "node tests/browser-online.mjs"
+    "test:online": "node tests/browser-online.mjs",
+    "test:custom": "xvfb-run -a env HEADFUL=1 node tests/browser-custom.mjs"
   },
   "devDependencies": {
     "playwright": "1.64.0"

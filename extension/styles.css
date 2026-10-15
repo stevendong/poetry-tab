@@ -85,7 +85,8 @@ svg.icon {
     radial-gradient(ellipse at 78% 18%, #c5bd8a26, transparent 55%),
     linear-gradient(135deg, #293e38, #526459 70%, #72755d);
 }
-#art {
+#art,
+#background-video {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -93,7 +94,8 @@ svg.icon {
   opacity: 0;
   transition: opacity 0.7s ease;
 }
-#art.loaded {
+#art.loaded,
+#background-video.loaded {
   opacity: 1;
 }
 .veil {
@@ -1056,4 +1058,49 @@ input[type="range"] {
   .long-verse h1 {
     font-size: 28px;
   }
+}
+
+.api-settings {
+  padding-bottom: 16px;
+  border-bottom: 1px solid #deded1;
+}
+.api-url-label {
+  display: block;
+  margin: 16px 0 8px;
+  font-size: 13px;
+}
+#api-url {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #d8dbc9;
+  border-radius: 7px;
+  background: #f9f7ef;
+  color: #455848;
+  font-size: 12px;
+}
+#api-provider {
+  max-width: 55%;
+}
+#save-api {
+  padding: 9px 14px;
+  margin-top: 12px;
+  background: #455848;
+  color: #fffdf4;
+  border: 0;
+  border-radius: 7px;
+  cursor: pointer;
+}
+#save-api:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+#api-status {
+  overflow-wrap: anywhere;
+}
+
+#background-video {
+  position: absolute;
+  inset: 0;
 }

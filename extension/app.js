@@ -1,3 +1,4 @@
+import { endpointFor, originPattern } from "./custom.js";
 import { QUOTES } from "./quotes.js";
 import { getContext, selectQuote } from "./context.js";
 import { storage, sanitizeSettings, DEFAULT_SETTINGS } from "./storage.js";
@@ -37,6 +38,7 @@ let currentSelection = {};
 let currentFromLibrary = false;
 let waitingForOnline = false;
 let toastKey;
+let apiStatusKey = "";
 
 function toast(key) {
   clearTimeout(toastTimer);
@@ -106,11 +108,80 @@ function applySettings() {
   $("show-meaning").checked = settings.showMeaning;
   $("text-size").value = settings.textSize;
   $("shade").value = settings.shade;
+  syncApiSettings();
   if (current) updateQuoteText();
   if ($("library-dialog").open) populateLibrary();
   if (toastKey && !$("toast").hidden) $("toast").textContent = t(toastKey);
   updateClock();
 }
+
+function setApiStatus(key) {
+  apiStatusKey = key;
+  $("api-status").textContent = t(key);
+}
+function providerLabel(quote) {
+  return t(quote.apiProvider === "service" ? "serviceSource" : "customSource");
+}
+function syncApiSettings() {
+  $("api-provider").value = settings.provider;
+  $("api-url").value =
+    settings.provider === "service" ? settings.serviceUrl : settings.customUrl;
+  $("media-preference").value = settings.mediaPreference;
+  showApiFields();
+  if (apiStatusKey) $("api-status").textContent = t(apiStatusKey);
+}
+function showApiFields() {
+  const provider = $("api-provider").value;
+  $("api-details").hidden = provider === "jinrishici";
+  $("api-help").textContent = t(
+    provider === "service" ? "serviceHelp" : "customHelp",
+  );
+}
+$("api-provider").addEventListener("change", () => {
+  $("api-url").value =
+    $("api-provider").value === "service"
+      ? settings.serviceUrl
+      : settings.customUrl;
+  setApiStatus("apiUnsaved");
+  showApiFields();
+});
+$("save-api").addEventListener("click", async () => {
+  const provider = $("api-provider").value;
+  const config = { provider, mediaPreference: $("media-preference").value };
+  if (provider !== "jinrishici")
+    config[provider === "service" ? "serviceUrl" : "customUrl"] =
+      $("api-url").value.trim();
+  $("save-api").disabled = true;
+  try {
+    let endpoint;
+    try {
+      endpoint = endpointFor({ ...settings, ...config });
+    } catch {
+      throw new Error("apiInvalid");
+    }
+    if (provider !== "jinrishici") {
+      if (!globalThis.chrome?.permissions) throw new Error("apiExtensionOnly");
+      const allowed = await chrome.permissions.request({
+        origins: [originPattern(endpoint)],
+      });
+      if (!allowed) throw new Error("apiDenied");
+    }
+    await settingsWrites.catch(() => {});
+    settings = sanitizeSettings({ ...settings, ...config });
+    await storage.set("settings", settings);
+    applySettings();
+    setApiStatus(settings.onlineEnabled ? "apiConnecting" : "apiSavedDisabled");
+    if (settings.onlineEnabled) await nextQuote();
+  } catch (error) {
+    setApiStatus(
+      ["apiInvalid", "apiExtensionOnly", "apiDenied"].includes(error.message)
+        ? error.message
+        : "apiError",
+    );
+  } finally {
+    $("save-api").disabled = false;
+  }
+});
 
 function updateFavorite() {
   const saved = current && favorites.includes(current.id);
@@ -124,7 +195,7 @@ function updateQuoteText() {
   const quote = current;
   const fromLibrary = currentFromLibrary;
   const selection = currentSelection;
-  const online = quote.provider === "online";
+  const online = ["online", "custom"].includes(quote.provider);
   const hasArt = Boolean(quote.art) && (!online || quote.artExact);
   document.body.classList.toggle(
     "long-verse",
@@ -137,13 +208,30 @@ function updateQuoteText() {
         ? selection.source === "cached"
           ? "cachedSource"
           : "onlineSource"
-        : selection.status === "unavailable"
-          ? "unavailableSource"
-          : selection.status === "repeat"
-            ? "repeatedSource"
-            : "offlineSource",
+        : selection.status === "permission"
+          ? "permissionSource"
+          : selection.status === "unavailable"
+            ? "unavailableSource"
+            : selection.status === "repeat"
+              ? "repeatedSource"
+              : "offlineSource",
   );
-  $("content-source").title = t(hasArt ? "artHint" : "defaultBackground");
+  if (quote.provider === "custom" && !waitingForOnline)
+    $("content-source").textContent = t(
+      selection.source === "cached"
+        ? "customCachedSource"
+        : "customOnlineSource",
+      { provider: providerLabel(quote) },
+    );
+  $("content-source").title = t(
+    quote.media && settings.onlineEnabled
+      ? quote.media.type === "video"
+        ? "remoteVideoHint"
+        : "remoteImageHint"
+      : hasArt
+        ? "artHint"
+        : "defaultBackground",
+  );
   const nodes = quote.lines.map((line) => {
     const span = document.createElement("span");
     span.textContent = chineseText(line);
@@ -182,14 +270,27 @@ async function displayQuote(quote, fromLibrary = false, selection = {}) {
   updateQuoteText();
   const hasArt =
     Boolean(quote.art) && (quote.provider !== "online" || quote.artExact);
+  const remoteMedia =
+    quote.provider === "custom" && settings.onlineEnabled ? quote.media : null;
   const art = $("art");
-  const src = hasArt ? `assets/art/${quote.art}.webp` : null;
+  const src = remoteMedia
+    ? remoteMedia.type === "video"
+      ? remoteMedia.posterUrl
+      : remoteMedia.url
+    : hasArt
+      ? `assets/art/${quote.art}.webp`
+      : null;
+  if (remoteMedia)
+    $("content-source").title = t(
+      remoteMedia.type === "video" ? "remoteVideoHint" : "remoteImageHint",
+    );
   if (!src) {
     resetBackground();
     document.body.dataset.quote = quote.id;
     return;
   }
   if (
+    !remoteMedia &&
     art.getAttribute("src") === src &&
     art.classList.contains("loaded") &&
     !art.hidden
@@ -199,6 +300,7 @@ async function displayQuote(quote, fromLibrary = false, selection = {}) {
   }
   resetBackground();
   const image = new Image();
+  image.referrerPolicy = "no-referrer";
   image.src = src;
   try {
     await image.decode();
@@ -208,17 +310,49 @@ async function displayQuote(quote, fromLibrary = false, selection = {}) {
     art.classList.add("loaded");
     document.body.dataset.background = "art";
     document.body.dataset.quote = quote.id;
+    if (remoteMedia?.type === "video") startVideo(remoteMedia, version);
   } catch {
     if (version !== renderVersion) return;
     resetBackground();
     document.body.dataset.quote = quote.id;
     $("art-caption").textContent = t("defaultBackground");
     $("content-source").title = t("defaultBackground");
-    toast("imageError");
+    toast(remoteMedia ? "remoteImageError" : "imageError");
   }
 }
 
+function startVideo(media, version) {
+  const video = $("background-video");
+  video.muted = true;
+  video.poster = media.posterUrl;
+  video.src = media.url;
+  video.onloadeddata = () => {
+    if (version !== renderVersion) return;
+    video.hidden = false;
+    video.classList.add("loaded");
+    document.body.dataset.background = "video";
+    void video.play().catch(() => {
+      video.hidden = true;
+      document.body.dataset.background = "art";
+    });
+  };
+  video.onerror = () => {
+    video.hidden = true;
+    video.pause();
+    document.body.dataset.background = "art";
+  };
+  video.load();
+}
 function resetBackground() {
+  const video = $("background-video");
+  video.onloadeddata = null;
+  video.onerror = null;
+  video.pause();
+  video.hidden = true;
+  video.classList.remove("loaded");
+  video.removeAttribute("src");
+  video.removeAttribute("poster");
+  video.load();
   $("art").hidden = true;
   $("art").removeAttribute("src");
   $("art").classList.remove("loaded");
@@ -242,6 +376,18 @@ async function nextQuote(options = {}) {
       currentId: current?.id,
       initial,
     });
+    if (settings.provider !== "jinrishici")
+      setApiStatus(
+        result.quote?.provider === "custom"
+          ? "apiSuccess"
+          : result.status === "permission"
+            ? "apiPermission"
+            : result.status === "unavailable"
+              ? "apiUnavailable"
+              : result.status === "repeat"
+                ? "apiRepeat"
+                : "apiSaved",
+      );
     context = result.context;
     const quote = result.quote || QUOTES.find((q) => q.id === result.quoteId);
     if (!quote) throw new Error("Unknown quote");
@@ -290,17 +436,26 @@ function populateReading() {
   $("appreciation-section").hidden = !current.appreciation;
   $("appreciation").textContent = chineseText(current.appreciation || "");
   $("art-caption").textContent =
-    current.art && (current.provider !== "online" || current.artExact)
-      ? t("artCaption")
-      : t("defaultBackground");
+    current.provider === "custom" && current.media && settings.onlineEnabled
+      ? t(
+          current.media.type === "video"
+            ? "remoteVideoCaption"
+            : "remoteImageCaption",
+        )
+      : current.art && (current.provider !== "online" || current.artExact)
+        ? t("artCaption")
+        : t("defaultBackground");
   $("source-link").textContent =
     current.provider === "online" && !current.artExact
       ? t("searchSource")
       : t("source");
-  $("provider-note").hidden = current.provider !== "online";
-  $("provider-note").textContent = current.artExact
-    ? t("providerExact")
-    : t("providerNote");
+  $("provider-note").hidden = !["online", "custom"].includes(current.provider);
+  $("provider-note").textContent =
+    current.provider === "custom"
+      ? t("remoteProviderNote", { provider: providerLabel(current) })
+      : current.artExact
+        ? t("providerExact")
+        : t("providerNote");
   $("fulltext").textContent = chineseText(current.fullText);
   $("fulltext-label").textContent = t(current.excerpt ? "excerpt" : "original");
   $("source-link").href = current.source;
@@ -417,10 +572,12 @@ document.querySelectorAll("dialog").forEach((dialog) => {
 $("settings-form").addEventListener("submit", (event) =>
   event.preventDefault(),
 );
-$("settings-form").addEventListener("change", () => {
+$("settings-form").addEventListener("change", (event) => {
+  if (event.target.closest(".api-settings")) return;
   const oldHemisphere = settings.hemisphere;
   const oldOnline = settings.onlineEnabled;
   settings = sanitizeSettings({
+    ...settings,
     language: $("language").value,
     onlineEnabled: $("online-enabled").checked,
     hemisphere: $("hemisphere").value,
@@ -430,6 +587,11 @@ $("settings-form").addEventListener("change", () => {
     shade: Number($("shade").value),
   });
   applySettings();
+  if (current?.provider === "custom" && !settings.onlineEnabled) {
+    renderVersion++;
+    resetBackground();
+    populateReading();
+  }
   const snapshot = { ...settings };
   settingsWrites = settingsWrites
     .catch(() => {})
@@ -486,8 +648,14 @@ function storageChanged(changes) {
     if ($("library-dialog").open) populateLibrary();
   }
   if (changes.settings) {
+    const oldSettings = settings;
     settings = sanitizeSettings(changes.settings.newValue);
     applySettings();
+    if (
+      current?.provider === "custom" &&
+      oldSettings.onlineEnabled !== settings.onlineEnabled
+    )
+      void displayQuote(current);
   }
 }
 if (globalThis.chrome?.storage?.onChanged) {

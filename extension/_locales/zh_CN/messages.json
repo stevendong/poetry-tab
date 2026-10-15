@@ -1,6 +1,8 @@
 {
-  "extensionName": { "message": "一笺 · 诗意新标签页" },
+  "extensionName": {
+    "message": "一笺 · 诗意新标签页"
+  },
   "extensionDescription": {
-    "message": "随时间与四季遇见诗意：今日诗词在线推荐，17 组离线诗画兜底，收藏与设置保存在本机。"
+    "message": "随时令遇见诗意：今日诗词、自定义诗词接口、图片与视频背景、万年历和本机收藏，支持离线。"
   }
 }

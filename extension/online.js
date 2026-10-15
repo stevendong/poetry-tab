@@ -1,3 +1,4 @@
+import { restoreCustom, readJson } from "./custom.js";
 import { QUOTES } from "./quotes.js";
 
 export const API_URL = "https://v2.jinrishici.com/one.json";
@@ -140,7 +141,11 @@ export function restoreOnline(value) {
   };
 }
 export function resolveFavorite(id, snapshots = {}) {
-  return QUOTES.find((q) => q.id === id) || restoreOnline(snapshots?.[id]);
+  return (
+    QUOTES.find((q) => q.id === id) ||
+    restoreOnline(snapshots?.[id]) ||
+    restoreCustom(snapshots?.[id])
+  );
 }
 export function createOnlineClient(
   storage,
@@ -186,10 +191,7 @@ export function createOnlineClient(
             referrerPolicy: "no-referrer",
             headers: token ? { "X-User-Token": token } : {},
           });
-          if (!response.ok) throw new Error("HTTP failure");
-          const text = await response.text();
-          if (text.length > 262144) throw new Error("Response too large");
-          const payload = JSON.parse(text);
+          const payload = await readJson(response);
           const quote = normalizeOnline(payload);
           // Keep the anonymous marker only in local storage, never in a URL or displayed data.
           if (

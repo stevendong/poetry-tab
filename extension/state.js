@@ -1,17 +1,15 @@
+import { createProviderClient } from "./provider-client.js";
+import { restoreCustom } from "./custom.js";
 import { QUOTES } from "./quotes.js";
 import { getContext, selectQuote, scoreQuote } from "./context.js";
 import { sanitizeSettings } from "./storage.js";
-import {
-  createOnlineClient,
-  restoreOnline,
-  resolveFavorite,
-} from "./online.js";
+import { restoreOnline, resolveFavorite } from "./online.js";
 
 export function createStateController(
   storage,
   {
     allowOnline = true,
-    onlineClient = createOnlineClient(storage),
+    onlineClient = createProviderClient(storage),
     date = () => new Date(),
     random = Math.random,
   } = {},
@@ -30,7 +28,10 @@ export function createStateController(
         let result = { status: "disabled" };
         if (allowOnline && settings.onlineEnabled && !message.preferOffline) {
           try {
-            result = await onlineClient.get(context);
+            result = await onlineClient.get(context, settings, {
+              currentId: message.currentId,
+              history: await storage.get("history", []),
+            });
           } catch {
             result = { status: "unavailable" };
           }
@@ -46,6 +47,10 @@ export function createStateController(
           let source = result.status,
             status = result.status;
           const changed =
+            latest.provider !== settings.provider ||
+            latest.serviceUrl !== settings.serviceUrl ||
+            latest.customUrl !== settings.customUrl ||
+            latest.mediaPreference !== settings.mediaPreference ||
             latest.hemisphere !== settings.hemisphere ||
             currentContext.season !== context.season ||
             currentContext.period !== context.period;
@@ -72,7 +77,7 @@ export function createStateController(
                     currentContext,
                     history,
                     random,
-                    message.currentId,
+                    message.initial ? null : message.currentId,
                   );
             source = "offline";
           }
@@ -95,7 +100,8 @@ export function createStateController(
             !Array.isArray(rawSnapshots)
               ? { ...rawSnapshots }
               : {};
-          const incoming = restoreOnline(message.quote);
+          const incoming =
+            restoreOnline(message.quote) || restoreCustom(message.quote);
           const quote =
             QUOTES.find((q) => q.id === message.id) ||
             incoming ||
@@ -112,7 +118,8 @@ export function createStateController(
             delete snapshots[message.id];
           } else {
             favorites = [...new Set([...ids, message.id])];
-            if (quote.provider === "online") snapshots[message.id] = quote;
+            if (["online", "custom"].includes(quote.provider))
+              snapshots[message.id] = quote;
           }
           // Write both fields together so another tab never sees an ID without its content.
           await storage.setMany({ favorites, favoriteSnapshots: snapshots });

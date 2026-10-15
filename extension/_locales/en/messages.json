@@ -1,6 +1,8 @@
 {
-  "extensionName": { "message": "Yijian · Poetry New Tab" },
+  "extensionName": {
+    "message": "Yijian \u00b7 Poetry New Tab"
+  },
   "extensionDescription": {
-    "message": "Chinese poetry for your new tab, with seasonal recommendations, a lunar calendar, and local favorites. Works offline."
+    "message": "Poetry for your new tab: custom APIs, image and video backgrounds, a lunar calendar and local favorites. Works offline."
   }
 }

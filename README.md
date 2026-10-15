@@ -11,6 +11,7 @@
 ## 功能
 
 - **遇见诗文**：优先使用今日诗词推荐；关闭在线推荐或服务不可用时，从内置的 17 组诗画中按季节与时段选择。
+- **自定义接口**：支持 poetry-service 推荐接口及通用 JSON GET 接口，可展示服务提供的句意、解读、图片和视频背景。
 - **专属配图**：有对应插画的诗文显示插画，其余使用默认渐变背景。
 - **展开阅读**：查看原文、句意或作品译文、意境解读及出处；在线内容未提供译文时会明确提示。
 - **本地收藏**：喜欢的诗文保存在当前浏览器中，离线可读；收藏和设置在同一浏览器配置的标签页之间同步。
@@ -58,13 +59,15 @@
 
 右上角仅在节气当天显示节气名称。日期与时钟使用本机时区，节气交接日期采用近似计算；离线四季以立春、立夏、立秋、立冬划分，南半球的季节相反。
 
+在设置中选择 poetry-service（预填 `https://poetry-api.nabulalogic.com`）或自定义 JSON 地址，点击「保存接口并连接」并允许该站点访问。poetry-service 可填写服务根地址或完整推荐接口；自定义 JSON 支持 `content`（或 `lines`）、`title`、`author`，可附带 `fullText`、`meaning`、`appreciation`、`imageUrl` 或 `videoUrl` + `posterUrl`。详细协议与验收记录以 [Notion 项目页面](https://www.notion.so/3f92dbec685c81fa87bbf6bf606e2844) 为准。
+
 ## 数据与隐私
 
-- 扩展只申请 `storage` 权限；联网访问范围为 `https://v2.jinrishici.com/*`。
-- 在线推荐默认开启，会向今日诗词发起请求，服务可以接收到 IP 地址等网络信息。匿名客户端标识和最近推荐缓存保存在本机。
+- 扩展使用 `storage`，默认联网权限仅覆盖今日诗词。自定义 HTTP/HTTPS 站点通过可选权限声明，在点击保存时按站点申请；不会在安装时要求所有网站访问权限。
+- 在线推荐默认使用今日诗词，匿名客户端标识与缓存保存在本机。自定义接口会收到 IP；poetry-service 还会收到季节、时段、节气（北半球）、背景偏好及近期句子 ID。自定义请求不发送 Cookie 或今日诗词标识。接口和媒体提供方按其政策处理请求。
 - 关闭「在线诗词推荐」后，使用内置诗文，不再发起新的诗词 API 请求。
 - 收藏和设置使用 `chrome.storage.local`，普通网页预览使用 `localStorage`，均不通过账号同步到其他浏览器。
-- 插画和字体随扩展打包，万年历可离线使用。扩展无需账号或定位权限。
+- 内置插画和字体随扩展打包，万年历及收藏文字可离线使用；自定义图片和视频需要联网。扩展无需账号或定位权限。
 
 ## 开发
 
@@ -86,6 +89,7 @@ npm run preview
 | `npm run check`         | 检查扩展清单、本地资源、脚本与插画映射         |
 | `npm run test:browser`  | 验证新标签页、离线模式、收藏和设置             |
 | `npm run test:online`   | 验证在线推荐、缓存、失败回退和在线收藏         |
+| `npm run test:custom` | 验证自定义接口授权、图片、视频、收藏和故障回退 |
 | `npm run test:calendar` | 验证日历、键盘操作与窄窗口布局                 |
 | `npm run test:language` | 验证繁简体与英文切换、持久化、标签页同步和布局 |
 | `npm run pack`          | 生成扩展 ZIP、解压目录及 SHA-256 校验文件      |
@@ -110,6 +114,8 @@ Linux 如缺少系统依赖，可使用 `npx playwright install --with-deps chro
 ```sh
 LIVE_API=1 npm run test:online
 ```
+
+`test:custom` 使用真实 Chrome 站点授权弹窗，需要 Linux 上的 Xvfb、xdotool、ImageMagick 和 FFmpeg；`LIVE_API=1 npm run test:custom` 额外检查线上 poetry-service 公开推荐与 CDN 图片。
 
 截图和测试记录写入 `artifacts/`，该目录不纳入版本控制。
 

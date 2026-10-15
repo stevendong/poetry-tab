@@ -6,7 +6,7 @@
     <meta name="color-scheme" content="dark light" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="script-src 'self'; object-src 'none'; connect-src 'self' https://v2.jinrishici.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'none'"
+      content="script-src 'self'; object-src 'none'; connect-src 'self' https: http:; img-src 'self' data: https: http:; media-src 'self' https: http:; style-src 'self' 'unsafe-inline'; base-uri 'none'"
     />
     <title data-i18n="pageTitle">一笺 · 诗意新标签页</title>
     <link rel="icon" href="assets/icons/icon48.png" />
@@ -51,7 +51,15 @@
       </defs>
     </svg>
     <div class="landscape" aria-hidden="true">
-      <img id="art" alt="" hidden />
+      <img id="art" alt="" referrerpolicy="no-referrer" hidden />
+      <video
+        id="background-video"
+        muted
+        loop
+        playsinline
+        preload="none"
+        hidden
+      ></video>
       <div class="veil"></div>
       <div class="grain"></div>
     </div>
@@ -372,7 +380,7 @@
           ><span
             ><strong data-i18n="onlineEnabled">在线诗词推荐</strong
             ><small data-i18n="onlineHint"
-              >优先今日诗词，断网时使用离线精选</small
+              >使用所选接口，断网时使用离线精选</small
             ></span
           ><input
             id="online-enabled"
@@ -380,6 +388,60 @@
             type="checkbox"
             class="switch"
         /></label>
+        <div class="api-settings">
+          <label class="setting-row" for="api-provider"
+            ><span
+              ><strong data-i18n="apiProvider">诗词来源</strong
+              ><small data-i18n="apiSaveHint"
+                >接口设置点击下方按钮保存</small
+              ></span
+            >
+            <select id="api-provider">
+              <option value="jinrishici" data-i18n="jinrishici">
+                今日诗词
+              </option>
+              <option value="service" data-i18n="serviceOption">
+                poetry-service 诗画库
+              </option>
+              <option value="custom" data-i18n="customOption">
+                自定义 JSON 接口
+              </option>
+            </select>
+          </label>
+          <div id="api-details" hidden>
+            <label class="api-url-label" for="api-url" data-i18n="apiUrl"
+              >接口地址</label
+            >
+            <input
+              id="api-url"
+              type="url"
+              maxlength="2048"
+              spellcheck="false"
+              autocomplete="off"
+              placeholder="https://poetry-api.nabulalogic.com"
+              aria-describedby="api-help"
+            />
+            <p id="api-help" class="privacy-note"></p>
+            <label class="setting-row" for="media-preference"
+              ><span
+                ><strong data-i18n="mediaPreference">背景偏好</strong
+                ><small data-i18n="mediaHint">可用时优先图片或视频</small></span
+              ><select id="media-preference">
+                <option value="image" data-i18n="imageOption">图片</option>
+                <option value="video" data-i18n="videoOption">视频</option>
+              </select></label
+            >
+          </div>
+          <button id="save-api" type="button" data-i18n="saveApi">
+            保存接口并连接
+          </button>
+          <p
+            id="api-status"
+            class="privacy-note"
+            role="status"
+            aria-live="polite"
+          ></p>
+        </div>
         <label class="setting-row" for="hemisphere"
           ><span
             ><strong data-i18n="hemisphere">所在半球</strong

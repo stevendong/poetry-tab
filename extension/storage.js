@@ -1,6 +1,11 @@
+import { SERVICE_URL, httpUrl } from "./custom.js";
 export const DEFAULT_SETTINGS = {
   language: "auto",
   onlineEnabled: true,
+  provider: "jinrishici",
+  serviceUrl: SERVICE_URL,
+  customUrl: "",
+  mediaPreference: "image",
   hemisphere: "north",
   showClock: true,
   showMeaning: false,
@@ -13,6 +18,12 @@ export function sanitizeSettings(value = {}) {
     language: ["en", "zh", "zh-TW"].includes(value.language)
       ? value.language
       : "auto",
+    provider: ["service", "custom"].includes(value.provider)
+      ? value.provider
+      : "jinrishici",
+    serviceUrl: httpUrl(value.serviceUrl) || SERVICE_URL,
+    customUrl: httpUrl(value.customUrl) || "",
+    mediaPreference: value.mediaPreference === "video" ? "video" : "image",
     onlineEnabled:
       typeof value.onlineEnabled === "boolean" ? value.onlineEnabled : true,
     hemisphere: value.hemisphere === "south" ? "south" : "north",

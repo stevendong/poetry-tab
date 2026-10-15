@@ -1,6 +1,8 @@
 {
-  "extensionName": { "message": "一箋 · 詩意新分頁" },
+  "extensionName": {
+    "message": "一箋 · 詩意新分頁"
+  },
   "extensionDescription": {
-    "message": "隨時間與四季遇見詩意：今日詩詞線上推薦，17 組離線詩畫備用，收藏與設定儲存在本機。"
+    "message": "隨時令遇見詩意：今日詩詞、自定義詩詞接口、圖片與視頻背景、萬年曆和本機收藏，支持離線。"
   }
 }

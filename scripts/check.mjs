@@ -10,9 +10,13 @@ assert.deepEqual(manifest.permissions, ["storage"]);
 assert.deepEqual(manifest.host_permissions, ["https://v2.jinrishici.com/*"]);
 assert.ok(
   manifest.content_security_policy.extension_pages.includes(
-    "connect-src 'self' https://v2.jinrishici.com",
+    "connect-src 'self' https: http:",
   ),
 );
+assert.deepEqual(manifest.optional_host_permissions, [
+  "https://*/*",
+  "http://*/*",
+]);
 for (const file of [
   manifest.chrome_url_overrides.newtab,
   manifest.background.service_worker,
