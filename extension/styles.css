@@ -1009,6 +1009,22 @@ input[type="range"] {
     font-size: 42px;
   }
 }
+@media (hover: hover) and (pointer: fine) {
+  .brand,
+  .almanac,
+  .reading-link,
+  .clock-wrap,
+  .tools {
+    opacity: 0.45;
+    transition: opacity 0.2s ease;
+  }
+  :is(.brand, .almanac, .reading-link, .clock-wrap, .tools):is(
+    :hover,
+    :focus-within
+  ) {
+    opacity: 1;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *:before,
