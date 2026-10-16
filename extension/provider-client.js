@@ -1,4 +1,5 @@
 import { createOnlineClient } from "./online.js";
+import { createServiceClient } from "./service-client.js";
 import {
   endpointFor,
   originPattern,
@@ -6,6 +7,7 @@ import {
   restoreCustom,
   customRequest,
   readJson,
+  retryAfterMs,
 } from "./custom.js";
 
 export function createProviderClient(
@@ -21,10 +23,18 @@ export function createProviderClient(
   } = {},
 ) {
   const jinrishici = createOnlineClient(storage, { fetchImpl, now, timeout });
+  const service = createServiceClient(storage, {
+    fetchImpl,
+    now,
+    timeout,
+    hasPermission,
+  });
   const flights = new Map();
   return {
     async get(context, settings, { currentId, history = [] } = {}) {
       if (settings.provider === "jinrishici") return jinrishici.get(context);
+      if (settings.provider === "service")
+        return service.get(context, settings);
       let endpoint;
       try {
         endpoint = endpointFor(settings);
@@ -49,7 +59,11 @@ export function createProviderClient(
         const state = await storage.get("customOnlineState", {});
         const same = state?.configKey === configKey;
         const last = same ? restoreCustom(state.quote) : null;
-        if (same && state.retryAt > now()) return { status: "unavailable" };
+        if (same && state.retryAt > now())
+          return {
+            status: state.failure || "unavailable",
+            retryAt: state.retryAt,
+          };
         const recent = [
           ...(Array.isArray(history) ? history.slice(-6) : []),
           currentId,
@@ -101,16 +115,23 @@ export function createProviderClient(
             retryAt: 0,
           });
           return { status: "online", quote };
-        } catch {
+        } catch (error) {
+          const status = error.status === 429 ? "rate_limited" : "unavailable";
+          const retryAt =
+            now() +
+            (error.status === 429
+              ? retryAfterMs(error.retryAfter, now())
+              : 60000);
           await storage.set("customOnlineState", {
             configKey,
             contextKey,
             quote: last,
             recent: remembered,
             fetchedAt: state?.fetchedAt || 0,
-            retryAt: now() + 60000,
+            retryAt,
+            failure: status,
           });
-          return { status: "unavailable" };
+          return { status, retryAt };
         } finally {
           clearTimeout(timer);
         }

@@ -224,7 +224,7 @@ test("custom client never forwards Jinrishici tokens or cookies; permission is c
     hasPermission: async () => allowed,
     fetchImpl: async (url, options) => {
       calls.push({ url, options });
-      return response({ quote: quote() });
+      return response({ items: [quote()] });
     },
   });
   const first = await client.get(context, settings);
@@ -247,7 +247,7 @@ test("cache, in-flight work and failure backoff are isolated across provider set
       await new Promise((r) => setTimeout(r, 5));
       if (url.startsWith("https://poetry.example"))
         return new Response("", { status: 503 });
-      return response({ quote: quote() });
+      return response({ items: [quote()] });
     },
   });
   const [a, b] = await Promise.all([
@@ -270,21 +270,27 @@ test("cache, in-flight work and failure backoff are isolated across provider set
   );
   assert.equal(calls, 2);
 });
-test("changing background preference invalidates cache and known recent IDs become exclusions", async () => {
+test("changing background preference invalidates the service pool without excluding its recent contents", async () => {
   const store = memory();
-  let urls = [];
+  const urls = [];
   const client = createProviderClient(store, {
     fetchImpl: async (url) => {
       urls.push(new URL(url));
-      return response({ quote: quote("q" + urls.length) });
+      return response({ items: [quote("q1"), quote("q2")] });
     },
   });
   const a = await client.get(context, settings);
-  await client.get(context, settings, { currentId: a.quote.id });
-  assert.equal(urls[1].searchParams.get("exclude"), "q1");
+  const cached = await client.get(context, settings, {
+    currentId: a.quotes[0].id,
+  });
+  assert.equal(cached.status, "cached");
+  assert.equal(urls.length, 1);
+  assert.equal(urls[0].pathname, "/api/v1/candidates");
+  assert.equal(urls[0].searchParams.has("exclude"), false);
   await client.get(context, { ...settings, mediaPreference: "video" });
-  assert.equal(urls[2].searchParams.get("prefer"), "video");
+  assert.equal(urls[1].searchParams.get("prefer"), "video");
 });
+
 test("JSON streaming is bounded by bytes even without Content-Length", async () => {
   await assert.rejects(readJson(new Response("中".repeat(90000))), /too large/);
   await assert.rejects(

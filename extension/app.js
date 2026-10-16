@@ -221,6 +221,14 @@ function updateQuoteText() {
     "long-verse",
     quote.lines.some((line) => line.length > 12),
   );
+  const fallbackSource =
+    {
+      permission: "permissionSource",
+      unavailable: "unavailableSource",
+      rate_limited: "rateLimitedSource",
+      empty: "emptySource",
+      repeat: "repeatedSource",
+    }[selection.status] || "offlineSource";
   $("content-source").textContent = t(
     waitingForOnline
       ? "fetchingSource"
@@ -228,19 +236,17 @@ function updateQuoteText() {
         ? selection.source === "cached"
           ? "cachedSource"
           : "onlineSource"
-        : selection.status === "permission"
-          ? "permissionSource"
-          : selection.status === "unavailable"
-            ? "unavailableSource"
-            : selection.status === "repeat"
-              ? "repeatedSource"
-              : "offlineSource",
+        : fallbackSource,
   );
   if (quote.provider === "custom" && !waitingForOnline)
     $("content-source").textContent = t(
-      selection.source === "cached"
-        ? "customCachedSource"
-        : "customOnlineSource",
+      selection.status === "rate_limited"
+        ? "customRateLimitedSource"
+        : selection.status === "unavailable" && selection.source === "cached"
+          ? "customUnavailableCachedSource"
+          : selection.source === "cached"
+            ? "customCachedSource"
+            : "customOnlineSource",
       { provider: providerLabel(quote) },
     );
   $("content-source").title = t(
@@ -396,18 +402,24 @@ async function nextQuote(options = {}) {
       currentId: current?.id,
       initial,
     });
-    if (settings.provider !== "jinrishici")
+    if (settings.provider !== "jinrishici") {
+      const statusKey = {
+        rate_limited: "apiRateLimited",
+        empty: "apiEmpty",
+        permission: "apiPermission",
+        repeat: "apiRepeat",
+      }[result.status];
       setApiStatus(
-        result.quote?.provider === "custom"
-          ? "apiSuccess"
-          : result.status === "permission"
-            ? "apiPermission"
-            : result.status === "unavailable"
-              ? "apiUnavailable"
-              : result.status === "repeat"
-                ? "apiRepeat"
-                : "apiSaved",
+        statusKey ||
+          (result.status === "unavailable"
+            ? result.source === "cached"
+              ? "apiCachedUnavailable"
+              : "apiUnavailable"
+            : result.quote?.provider === "custom"
+              ? "apiSuccess"
+              : "apiSaved"),
       );
+    }
     context = result.context;
     const quote = result.quote || QUOTES.find((q) => q.id === result.quoteId);
     if (!quote) throw new Error("Unknown quote");

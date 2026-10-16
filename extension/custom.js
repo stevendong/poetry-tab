@@ -180,8 +180,21 @@ export function customRequest(settings, context, exclusions = []) {
   }
   return url.href;
 }
+export function retryAfterMs(value, now = Date.now()) {
+  const raw = typeof value === "string" ? value.trim() : "";
+  const delay = /^\d+$/.test(raw) ? Number(raw) * 1000 : Date.parse(raw) - now;
+  return Number.isFinite(delay)
+    ? Math.min(3600000, Math.max(1000, delay))
+    : 60000;
+}
 export async function readJson(response, maxBytes = 262144) {
-  if (!response.ok) throw new Error("HTTP failure");
+  if (!response.ok) {
+    const error = new Error("HTTP failure");
+    error.status = response.status;
+    error.retryAfter = response.headers?.get("retry-after");
+    await response.body?.cancel();
+    throw error;
+  }
   if (Number(response.headers?.get("content-length")) > maxBytes)
     throw new Error("Response too large");
   const reader = response.body?.getReader();

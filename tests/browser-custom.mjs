@@ -54,6 +54,16 @@ const server = createServer((req, res) => {
     res.end();
     return;
   }
+  if (mode === "rate") {
+    res.writeHead(429, { "Retry-After": "10" });
+    res.end();
+    return;
+  }
+  if (mode === "empty") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ items: [] }));
+    return;
+  }
   if (mode === "malformed") {
     res.end("{bad");
     return;
@@ -79,7 +89,9 @@ const server = createServer((req, res) => {
             meaning: "知己虽远，情谊相连。",
             imageUrl: "/art.webp",
           }
-        : { quote: q },
+        : req.url.startsWith("/api/v1/candidates")
+          ? { items: [1, 2, 3].map((n) => ({ ...q, id: "pool-" + n })) }
+          : { quote: q },
     ),
   );
 });
@@ -104,8 +116,16 @@ async function configure(page, provider, url, grant = false) {
   await page.locator("#settings-button").click();
   await page.locator("#api-provider").selectOption(provider);
   if (url) await page.locator("#api-url").fill(url);
+  const needsPrompt =
+    grant &&
+    (await page.evaluate(async (address) => {
+      const target = new URL(address);
+      return !(await chrome.permissions.contains({
+        origins: [`${target.protocol}//${target.hostname}/*`],
+      }));
+    }, url));
   await page.locator("#save-api").click();
-  if (process.env.HEADFUL === "1" && grant) {
+  if (process.env.HEADFUL === "1" && needsPrompt) {
     await new Promise((r) => setTimeout(r, 600));
     execFileSync("/usr/bin/import", [
       "-window",
@@ -218,9 +238,70 @@ try {
   const before = apiCalls.length;
   await page.locator("#next-button").click();
   await ready(page);
-  assert.equal(apiCalls.length, before + 1);
-  assert.ok(new URL(apiCalls.at(-1).url, base).searchParams.get("exclude"));
-  pass("Switching quotes asks service to exclude recent remote IDs");
+  assert.equal(apiCalls.length, before);
+  assert.equal(
+    new URL(apiCalls.at(-1).url, base).pathname,
+    "/api/v1/candidates",
+  );
+  let previous = await page.locator("body").getAttribute("data-quote");
+  for (let i = 0; i < 9; i++) {
+    await page.locator("#next-button").click();
+    await ready(page);
+    const selected = await page.locator("body").getAttribute("data-quote");
+    assert(selected.startsWith("custom:"));
+    assert.notEqual(selected, previous);
+    assert(
+      !/网络暂不可用/.test(await page.locator("#content-source").innerText()),
+    );
+    previous = selected;
+  }
+  assert.equal(apiCalls.length, before);
+  pass(
+    "Three service candidates rotate beyond the fourth refresh with no extra requests or adjacent repeats",
+  );
+  await worker.evaluate(async () => {
+    const { servicePoolState } =
+      await chrome.storage.local.get("servicePoolState");
+    await chrome.storage.local.set({
+      servicePoolState: { ...servicePoolState, fetchedAt: Date.now() - 61000 },
+    });
+  });
+  mode = "rate";
+  await page.locator("#next-button").click();
+  await ready(page);
+  assert.match(
+    await page.locator("#content-source").innerText(),
+    /请求频繁.*缓存/,
+  );
+  assert(
+    (await page.locator("body").getAttribute("data-quote")).startsWith(
+      "custom:",
+    ),
+  );
+  const limitedCalls = apiCalls.length;
+  await page.locator("#next-button").click();
+  await ready(page);
+  assert.equal(apiCalls.length, limitedCalls);
+  mode = "empty";
+  await worker.evaluate(async () => {
+    const { servicePoolState } =
+      await chrome.storage.local.get("servicePoolState");
+    await chrome.storage.local.set({
+      servicePoolState: { ...servicePoolState, retryAt: 0 },
+    });
+  });
+  await page.locator("#next-button").click();
+  await ready(page);
+  assert.match(
+    await page.locator("#content-source").innerText(),
+    /当前时令暂无在线内容/,
+  );
+  assert(
+    !/网络暂不可用/.test(await page.locator("#content-source").innerText()),
+  );
+  pass(
+    "429 rotates cached poems during Retry-After; empty results have a separate label instead of reporting offline",
+  );
   mode = "video";
   await page.locator("#settings-button").click();
   await page.locator("#media-preference").selectOption("video");
@@ -341,6 +422,15 @@ try {
   pass("HTTP failure falls back to offline art and respects failure backoff");
   mode = "image";
   if (process.env.LIVE_API === "1") {
+    await worker.evaluate(() => {
+      globalThis.__liveRequests = [];
+      const original = globalThis.fetch;
+      globalThis.fetch = (...args) => {
+        if (String(args[0]).startsWith("https://poetry-api.nabulalogic.com/"))
+          globalThis.__liveRequests.push(String(args[0]));
+        return original(...args);
+      };
+    });
     await configure(
       page,
       "service",
@@ -361,6 +451,49 @@ try {
       (await page.locator("#art").getAttribute("src")).startsWith(
         "https://poetry-media.nabulalogic.com/",
       ),
+    );
+    const seen = [];
+    let current = await page.locator("body").getAttribute("data-quote");
+    seen.push(current);
+    for (let i = 0; i < 10; i++) {
+      await page.locator("#next-button").click();
+      await ready(page);
+      const id = await page.locator("body").getAttribute("data-quote");
+      assert(id.startsWith("custom:"));
+      assert.notEqual(id, current);
+      current = id;
+      seen.push(id);
+      assert(
+        !/离线精选|网络暂不可用/.test(
+          await page.locator("#content-source").innerText(),
+        ),
+      );
+    }
+    for (let i = 0; i < 4; i++) {
+      await page.reload();
+      await ready(page);
+      assert(
+        (await page.locator("body").getAttribute("data-quote")).startsWith(
+          "custom:",
+        ),
+      );
+      assert(
+        !/离线精选|网络暂不可用/.test(
+          await page.locator("#content-source").innerText(),
+        ),
+      );
+    }
+    const liveRequests = await worker.evaluate(() => globalThis.__liveRequests);
+    assert.equal(liveRequests.length, 1);
+    assert.equal(new URL(liveRequests[0]).pathname, "/api/v1/candidates");
+    console.log(
+      "LIVE_REFRESH " +
+        JSON.stringify({
+          swaps: 10,
+          reloads: 4,
+          distinct: new Set(seen).size,
+          apiCalls: liveRequests.length,
+        }),
     );
     await page.screenshot({ path: root + "artifacts/custom-service-live.png" });
     pass(

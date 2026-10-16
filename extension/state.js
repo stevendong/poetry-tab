@@ -1,5 +1,6 @@
 import { createProviderClient } from "./provider-client.js";
 import { restoreCustom } from "./custom.js";
+import { selectServiceQuote } from "./service-client.js";
 import { QUOTES } from "./quotes.js";
 import { getContext, selectQuote, scoreQuote } from "./context.js";
 import { sanitizeSettings } from "./storage.js";
@@ -43,8 +44,14 @@ export function createStateController(
           const history = Array.isArray(raw)
             ? raw.filter((id) => typeof id === "string")
             : [];
-          let quote = result.quote;
-          let source = result.status,
+          const pool =
+            settings.provider === "service" && result.quotes?.length
+              ? result.quotes
+              : null;
+          let quote = pool
+            ? selectServiceQuote(pool, history, message.currentId, random)
+            : result.quote;
+          let source = result.cached ? "cached" : result.status,
             status = result.status;
           const changed =
             latest.provider !== settings.provider ||
@@ -58,8 +65,9 @@ export function createStateController(
             !quote ||
             !latest.onlineEnabled ||
             changed ||
-            quote.id === message.currentId ||
-            history.slice(-6).includes(quote.id)
+            (!pool &&
+              (quote.id === message.currentId ||
+                history.slice(-6).includes(quote.id)))
           ) {
             if (quote && latest.onlineEnabled && !changed) status = "repeat";
             if (!latest.onlineEnabled || message.preferOffline || !allowOnline)

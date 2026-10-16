@@ -15,6 +15,7 @@ async function launch() {
   browser = await chromium.launchPersistentContext(join(directory, "profile"), {
     executablePath: process.env.CHROME_PATH || chromium.executablePath(),
     headless: true,
+    locale: "zh-CN",
     args: [
       `--load-extension=${extension}`,
       `--disable-extensions-except=${extension}`,
@@ -145,7 +146,7 @@ try {
     globalThis.fetch = async (url) => {
       globalThis.__defaultApiRequests.push(String(url));
       return new Response(JSON.stringify({
-        quote: {
+        items: [{
           id: "default-service-poem",
           status: "published",
           ready: true,
@@ -153,7 +154,7 @@ try {
           title: "送杜少府之任蜀州",
           author: "王勃",
           fullText: "海内存知己，天涯若比邻。",
-        },
+        }],
       }));
     };
     await chrome.storage.local.clear();
@@ -168,7 +169,7 @@ try {
   assert.equal(requests.length, 1);
   const request = new URL(requests[0]);
   assert.equal(request.origin, "https://poetry-api.nabulalogic.com");
-  assert.equal(request.pathname, "/api/v1/recommendation");
+  assert.equal(request.pathname, "/api/v1/candidates");
   assert.ok(request.searchParams.get("season"));
   assert.ok(request.searchParams.get("period"));
   await page.locator("#settings-button").click();
