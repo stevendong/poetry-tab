@@ -10,7 +10,7 @@ Yijian is a Chrome new tab extension that brings classical Chinese poetry, prose
 
 ## Features
 
-- **Poems for the moment:** Jinrishici provides online recommendations. When online recommendations are disabled or unavailable, the extension selects from 17 built-in poems and illustrations using the season and time of day.
+- **Poems for the moment:** Poetry Service provides online recommendations by default. You can also choose Jinrishici or a custom API. When online recommendations are disabled or unavailable, the extension selects from 17 built-in poems and illustrations using the season and time of day.
 - **Dedicated illustrations:** Poems with matching artwork display it. Other poems use a default gradient background.
 - **Read further:** Open the original text, explanation or translation, commentary, and source. Missing online translations are clearly indicated.
 - **Local favorites:** Saved poems remain readable offline. Favorites and preferences sync between tabs in the same browser profile.
@@ -62,8 +62,8 @@ The header shows a solar term only on its date. Dates and the clock follow your 
 
 ## Data and privacy
 
-- The extension uses `storage` and default host access to Jinrishici. Custom sites use optional host permissions, requested for the chosen site when you save its API.
-- Online recommendations are enabled by default. Requests go to Jinrishici, which can receive your IP address and other network information. The anonymous client identifier and recent recommendation cache are stored locally.
+- The extension uses `storage` and default host access to the official Poetry Service API and Jinrishici. Other custom sites use optional host permissions, requested for the chosen site when you save its API.
+- Online recommendations use Poetry Service at `https://poetry-api.nabulalogic.com` by default. It receives your IP, season, time of day, solar term (Northern Hemisphere), background preference, and recent poem IDs. Poetry Service and custom requests send no cookies or Jinrishici identifiers. If you choose Jinrishici, its anonymous client identifier and recommendation cache are stored locally.
 - Turning online recommendations off uses the built-in collection and stops new poem API requests.
 - Favorites and settings use `chrome.storage.local`; the web preview uses `localStorage`. They do not sync to other browsers through an account.
 - Built-in fonts and artwork are bundled. The calendar and saved text work offline; custom images and videos require a connection. No account or location permission is required.
@@ -159,6 +159,7 @@ The project uses the [MIT License](LICENSE). Third-party fonts, texts, and onlin
 | Offline poem originals                | Each entry in [`quotes.js`](extension/quotes.js) links to [Wikisource](https://zh.wikisource.org/)                                                                   |
 | Offline explanations and commentary   | Written for this project                                                                                                                                             |
 | Online poems and Chinese translations | Provided by the [Jinrishici API](https://www.jinrishici.com/)                                                                                                        |
+| Default online poems, media and commentary | Poetry Service recommendations at `https://poetry-api.nabulalogic.com` |
 | Chinese script conversion             | [OpenCC JavaScript](https://github.com/nk2028/opencc-js) 1.4.2, bundled locally; see [provenance and licenses](extension/vendor/opencc/README.md) |
 | Illustrations                         | AI-assisted artwork; prompts and generation records are in [`prompts.json`](extension/assets/art/prompts.json)                                                       |
 | Poem font                             | Bundled Noto Serif SC subset, under the [SIL Open Font License 1.1](extension/assets/fonts/OFL.txt); see [`provenance.json`](extension/assets/fonts/provenance.json) |

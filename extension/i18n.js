@@ -138,7 +138,7 @@ export const MESSAGES = {
     settingsNote:
       "显示设置自动保存；接口设置需点击保存。时钟与离线选句使用本机时区；离线四季以立春、立夏、立秋、立冬划分，南半球相反。在线选句由所选接口推荐。节气名称沿用中国传统，交界时刻采用近似计算。",
     privacyNote:
-      "内置 17 组离线诗画。今日诗词会依据 IP 等信息推荐；自定义接口会收到连接 IP，诗画库还会收到季节、时段等推荐参数。接口与媒体服务按其隐私政策处理请求。仅在保存自定义接口时申请该站点访问权限，接口无需管理员密钥。关闭在线推荐后仅使用离线诗画。按空格换一句，按 Esc 关闭面板。",
+      "内置 17 组离线诗画。默认由诗画库推荐，会收到连接 IP、季节、时段等参数；今日诗词会依据 IP 等信息推荐。接口与媒体服务按其隐私政策处理请求。其他自定义站点在保存接口时申请访问权限，接口无需管理员密钥。关闭在线推荐后仅使用离线诗画。按空格换一句，按 Esc 关闭面板。",
     noScript: "请启用 JavaScript 以展示与此刻相应的诗词。",
     imageError: "插画暂时未能载入，请检查扩展文件是否完整",
     storageError: "本地存储暂不可用，当前诗句仍可阅读",
@@ -299,7 +299,7 @@ export const MESSAGES = {
     settingsNote:
       "Display settings save automatically; API settings require the save button. The clock and offline selection use your local time zone. Offline seasons follow the Chinese solar terms, reversed in the Southern Hemisphere. Online selection comes from your chosen API. Solar term dates are approximate.",
     privacyNote:
-      "Includes 17 offline poems with illustrations. Jinrishici may recommend using your IP. Custom APIs receive your connection IP; Poetry Service also receives season and time parameters. API and media providers handle requests under their own privacy policies. Custom site access is requested only when you save its API; no admin key is required. Turn off online recommendations to use offline poems only. Space changes poems; Esc closes panels.",
+      "Includes 17 offline poems with illustrations. Poetry Service is the default and receives your connection IP, season and time parameters. Jinrishici may recommend using your IP. API and media providers handle requests under their own privacy policies. Access to other custom sites is requested when you save their API; no admin key is required. Turn off online recommendations to use offline poems only. Space changes poems; Esc closes panels.",
     noScript: "Enable JavaScript to see a poem for this moment.",
     imageError:
       "The illustration could not load. Check that the extension files are complete.",

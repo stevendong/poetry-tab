@@ -7,7 +7,10 @@ const root = fileURLToPath(new URL("../extension/", import.meta.url));
 const manifest = JSON.parse(await readFile(root + "manifest.json", "utf8"));
 assert.equal(manifest.manifest_version, 3);
 assert.deepEqual(manifest.permissions, ["storage"]);
-assert.deepEqual(manifest.host_permissions, ["https://v2.jinrishici.com/*"]);
+assert.deepEqual(manifest.host_permissions, [
+  "https://poetry-api.nabulalogic.com/*",
+  "https://v2.jinrishici.com/*",
+]);
 assert.ok(
   manifest.content_security_policy.extension_pages.includes(
     "connect-src 'self' https: http:",

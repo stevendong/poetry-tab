@@ -10,7 +10,7 @@
 
 ## 功能
 
-- **遇见诗文**：优先使用今日诗词推荐；关闭在线推荐或服务不可用时，从内置的 17 组诗画中按季节与时段选择。
+- **遇见诗文**：默认使用 poetry-service 诗画库推荐，也可切换今日诗词或自定义接口；关闭在线推荐或服务不可用时，从内置的 17 组诗画中按季节与时段选择。
 - **自定义接口**：支持 poetry-service 推荐接口及通用 JSON GET 接口，可展示服务提供的句意、解读、图片和视频背景。
 - **专属配图**：有对应插画的诗文显示插画，其余使用默认渐变背景。
 - **展开阅读**：查看原文、句意或作品译文、意境解读及出处；在线内容未提供译文时会明确提示。
@@ -61,12 +61,12 @@
 
 右上角仅在节气当天显示节气名称。日期与时钟使用本机时区，节气交接日期采用近似计算；离线四季以立春、立夏、立秋、立冬划分，南半球的季节相反。
 
-在设置中选择 poetry-service（预填 `https://poetry-api.nabulalogic.com`）或自定义 JSON 地址，点击「保存接口并连接」并允许该站点访问。poetry-service 可填写服务根地址或完整推荐接口；自定义 JSON 支持 `content`（或 `lines`）、`title`、`author`，可附带 `fullText`、`meaning`、`appreciation`、`imageUrl` 或 `videoUrl` + `posterUrl`。详细协议与验收记录以 [Notion 项目页面](https://www.notion.so/3f92dbec685c81fa87bbf6bf606e2844) 为准。
+默认连接 poetry-service 诗画库（`https://poetry-api.nabulalogic.com`），无需手动配置。也可在设置中切换今日诗词或填写自定义 JSON 地址，点击「保存接口并连接」；其他自定义站点需允许访问。已保存的来源选择会保留。poetry-service 可填写服务根地址或完整推荐接口；自定义 JSON 支持 `content`（或 `lines`）、`title`、`author`，可附带 `fullText`、`meaning`、`appreciation`、`imageUrl` 或 `videoUrl` + `posterUrl`。详细协议与验收记录以 [Notion 项目页面](https://www.notion.so/3f92dbec685c81fa87bbf6bf606e2844) 为准。
 
 ## 数据与隐私
 
-- 扩展使用 `storage`，默认联网权限仅覆盖今日诗词。自定义 HTTP/HTTPS 站点通过可选权限声明，在点击保存时按站点申请；不会在安装时要求所有网站访问权限。
-- 在线推荐默认使用今日诗词，匿名客户端标识与缓存保存在本机。自定义接口会收到 IP；poetry-service 还会收到季节、时段、节气（北半球）、背景偏好及近期句子 ID。自定义请求不发送 Cookie 或今日诗词标识。接口和媒体提供方按其政策处理请求。
+- 扩展使用 `storage`，默认联网权限覆盖诗画库官方接口和今日诗词。其他自定义 HTTP/HTTPS 站点通过可选权限声明，在点击保存时按站点申请；不会在安装时要求所有网站访问权限。
+- 在线推荐默认使用诗画库，会收到 IP、季节、时段、节气（北半球）、背景偏好及近期句子 ID。诗画库和自定义请求不发送 Cookie 或今日诗词标识；切换今日诗词后，其匿名客户端标识与缓存保存在本机。接口和媒体提供方按其政策处理请求。
 - 关闭「在线诗词推荐」后，使用内置诗文，不再发起新的诗词 API 请求。
 - 收藏和设置使用 `chrome.storage.local`，普通网页预览使用 `localStorage`，均不通过账号同步到其他浏览器。
 - 内置插画和字体随扩展打包，万年历及收藏文字可离线使用；自定义图片和视频需要联网。扩展无需账号或定位权限。
@@ -165,6 +165,7 @@ docs/images/           README 界面截图
 | 离线诗文原文       | 每条记录均附 [维基文库](https://zh.wikisource.org/) 出处，见 [`quotes.js`](extension/quotes.js)                                                                       |
 | 离线句意与意境解读 | 项目编写                                                                                                                                                              |
 | 在线诗文与作品译文 | [今日诗词](https://www.jinrishici.com/)，由其 API 提供                                                                                                                |
+| 默认在线诗画与解读 | poetry-service 诗画库，使用 `https://poetry-api.nabulalogic.com` 推荐接口 |
 | 繁简体转换         | [OpenCC JavaScript](https://github.com/nk2028/opencc-js) 1.4.2，代码与词典随扩展打包；[来源与许可证](extension/vendor/opencc/README.md) |
 | 意境插画           | AI 辅助生成；提示词与生成记录见 [`prompts.json`](extension/assets/art/prompts.json)                                                                                   |
 | 诗文字体           | Noto Serif SC，本地子集字体；遵循 [SIL Open Font License 1.1](extension/assets/fonts/OFL.txt)，来源记录见 [`provenance.json`](extension/assets/fonts/provenance.json) |

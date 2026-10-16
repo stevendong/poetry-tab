@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  SERVICE_URL,
   endpointFor,
   httpUrl,
   originPattern,
@@ -12,7 +13,7 @@ import {
 import { createProviderClient } from "../extension/provider-client.js";
 import { createStateController } from "../extension/state.js";
 import { resolveFavorite } from "../extension/online.js";
-import { sanitizeSettings } from "../extension/storage.js";
+import { DEFAULT_SETTINGS, sanitizeSettings } from "../extension/storage.js";
 
 const context = {
   season: "autumn",
@@ -54,6 +55,18 @@ function memory(initial = {}) {
     },
   };
 }
+
+test("settings default to Poetry Service and preserve explicitly selected providers", () => {
+  assert.equal(DEFAULT_SETTINGS.provider, "service");
+  for (const value of [undefined, null, {}, { provider: "invalid" }]) {
+    const settings = sanitizeSettings(value);
+    assert.equal(settings.provider, "service");
+    assert.equal(settings.serviceUrl, SERVICE_URL);
+    assert.equal(endpointFor(settings), SERVICE_URL + "/api/v1/recommendation");
+  }
+  for (const provider of ["service", "custom", "jinrishici"])
+    assert.equal(sanitizeSettings({ provider }).provider, provider);
+});
 
 test("service URL accepts root, deployment prefix or recommendation endpoint and preserves query", () => {
   for (const [url, expected] of [

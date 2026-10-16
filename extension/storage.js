@@ -2,7 +2,7 @@ import { SERVICE_URL, httpUrl } from "./custom.js";
 export const DEFAULT_SETTINGS = {
   language: "auto",
   onlineEnabled: true,
-  provider: "jinrishici",
+  provider: "service",
   serviceUrl: SERVICE_URL,
   customUrl: "",
   mediaPreference: "image",
@@ -18,9 +18,9 @@ export function sanitizeSettings(value = {}) {
     language: ["en", "zh", "zh-TW"].includes(value.language)
       ? value.language
       : "auto",
-    provider: ["service", "custom"].includes(value.provider)
+    provider: ["service", "custom", "jinrishici"].includes(value.provider)
       ? value.provider
-      : "jinrishici",
+      : DEFAULT_SETTINGS.provider,
     serviceUrl: httpUrl(value.serviceUrl) || SERVICE_URL,
     customUrl: httpUrl(value.customUrl) || "",
     mediaPreference: value.mediaPreference === "video" ? "video" : "image",

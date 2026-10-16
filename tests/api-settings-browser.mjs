@@ -62,6 +62,7 @@ try {
   const manifest = await readFile(manifestPath, "utf8");
   const staleManifest = JSON.parse(manifest);
   delete staleManifest.optional_host_permissions;
+  staleManifest.host_permissions = ["https://v2.jinrishici.com/*"];
   await writeFile(manifestPath, JSON.stringify(staleManifest));
   let page = await launch();
   const before = await savedSettings(page);
@@ -131,12 +132,49 @@ try {
   assert.equal(await page.locator("#api-provider").inputValue(), "service");
   await page.evaluate(() => {
     chrome.permissions.request = async () => {
-      throw new Error("Default provider must not request permissions");
+      throw new Error("Jinrishici must not request optional permissions");
     };
   });
   assert.match(await save(page, "jinrishici"), /接口已保存/);
   assert.equal((await savedSettings(page)).provider, "jinrishici");
-  console.log("PASS Granted API configuration persists across reload; default provider needs no optional grant");
+  console.log("PASS Granted API configuration persists across reload; Jinrishici needs no optional grant");
+
+  const worker = browser.serviceWorkers()[0];
+  await worker.evaluate(async () => {
+    globalThis.__defaultApiRequests = [];
+    globalThis.fetch = async (url) => {
+      globalThis.__defaultApiRequests.push(String(url));
+      return new Response(JSON.stringify({
+        quote: {
+          id: "default-service-poem",
+          status: "published",
+          ready: true,
+          lines: ["海内存知己", "天涯若比邻"],
+          title: "送杜少府之任蜀州",
+          author: "王勃",
+          fullText: "海内存知己，天涯若比邻。",
+        },
+      }));
+    };
+    await chrome.storage.local.clear();
+  });
+  await page.reload();
+  await page.waitForFunction(() =>
+    document.getElementById("poetry").getAttribute("aria-busy") === "false" &&
+    document.body.dataset.quote?.startsWith("custom:"),
+  );
+  assert.match(await page.locator("#content-source").innerText(), /诗画库/);
+  const requests = await worker.evaluate(() => globalThis.__defaultApiRequests);
+  assert.equal(requests.length, 1);
+  const request = new URL(requests[0]);
+  assert.equal(request.origin, "https://poetry-api.nabulalogic.com");
+  assert.equal(request.pathname, "/api/v1/recommendation");
+  assert.ok(request.searchParams.get("season"));
+  assert.ok(request.searchParams.get("period"));
+  await page.locator("#settings-button").click();
+  assert.equal(await page.locator("#api-provider").inputValue(), "service");
+  assert.match(await save(page), /接口连接成功|接口内容重复/);
+  console.log("PASS Fresh settings use Poetry Service with real manifest permission and no optional grant prompt");
   assert.deepEqual(errors, []);
 } finally {
   await browser?.close();

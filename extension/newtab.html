@@ -397,11 +397,11 @@
               ></span
             >
             <select id="api-provider">
-              <option value="jinrishici" data-i18n="jinrishici">
-                今日诗词
-              </option>
               <option value="service" data-i18n="serviceOption">
                 poetry-service 诗画库
+              </option>
+              <option value="jinrishici" data-i18n="jinrishici">
+                今日诗词
               </option>
               <option value="custom" data-i18n="customOption">
                 自定义 JSON 接口
@@ -495,12 +495,10 @@
             step="5"
         /></label>
         <p class="privacy-note" data-i18n="settingsNote">
-          设置自动保存。时钟与离线选句使用本机时区；离线四季以立春、立夏、立秋、立冬划分，南半球相反。在线选句由今日诗词服务推荐。节气名称沿用中国传统，交界时刻采用近似计算。
+          显示设置自动保存；接口设置需点击保存。时钟与离线选句使用本机时区；离线四季以立春、立夏、立秋、立冬划分，南半球相反。在线选句由所选接口推荐。节气名称沿用中国传统，交界时刻采用近似计算。
         </p>
         <p class="privacy-note" data-i18n="privacyNote">
-          内置 17 组离线诗画。在线推荐由今日诗词提供，会依据 IP
-          等信息推荐；关闭在线推荐后仅使用离线内容。无需账号或定位权限。按空格换一句，按
-          Esc 关闭面板。
+          内置 17 组离线诗画。默认由诗画库推荐，会收到连接 IP、季节与时段等参数；其他自定义站点在保存接口时申请访问权限。关闭在线推荐后仅使用离线诗画。按空格换一句，按 Esc 关闭面板。
         </p>
       </form>
     </dialog>

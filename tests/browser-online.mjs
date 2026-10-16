@@ -114,7 +114,9 @@ try {
     browser.serviceWorkers()[0] ||
     (await browser.waitForEvent("serviceworker"));
   await worker.evaluate(() =>
-    chrome.storage.local.set({ settings: { language: "zh" } }),
+    chrome.storage.local.set({
+      settings: { language: "zh", provider: "jinrishici" },
+    }),
   );
   const page = await browser.newPage();
   page.on("pageerror", (e) => errors.push(e.message));

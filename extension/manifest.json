@@ -23,6 +23,7 @@
     "extension_pages": "script-src 'self'; object-src 'none'; connect-src 'self' https: http:; img-src 'self' data: https: http:; media-src 'self' https: http:; style-src 'self' 'unsafe-inline'; base-uri 'none'"
   },
   "host_permissions": [
+    "https://poetry-api.nabulalogic.com/*",
     "https://v2.jinrishici.com/*"
   ],
   "optional_host_permissions": [
