@@ -66,12 +66,45 @@ try {
   await page.waitForFunction(() => !document.getElementById("next-button").disabled);
   console.log("PASS Decoded background visibly fades from transparent to opaque");
 
+  async function checkBackgroundMotion() {
+    const samples = await page.locator("#art").evaluate((art) => {
+      const animation = art.getAnimations().find((item) => item.animationName === "background-drift");
+      if (!animation) throw new Error("Background camera animation is missing");
+      animation.pause();
+      const { delay, duration } = animation.effect.getTiming();
+      const samples = [0, 0.5, 1, 1.5, 2].map((progress) => {
+        animation.currentTime = delay + duration * progress;
+        const transform = new DOMMatrixReadOnly(getComputedStyle(art).transform);
+        const rect = art.getBoundingClientRect();
+        return {
+          scale: transform.a,
+          x: transform.e,
+          y: transform.f,
+          coversViewport: rect.left <= 0 && rect.top <= 0 &&
+            rect.right >= innerWidth && rect.bottom >= innerHeight,
+        };
+      });
+      animation.currentTime = 0;
+      animation.play();
+      return samples;
+    });
+    assert.ok(samples.every((sample) => sample.coversViewport), "Camera movement never exposes image edges");
+    assert.ok(samples[0].scale < samples[1].scale && samples[1].scale < samples[2].scale);
+    assert.ok(samples[2].scale - samples[0].scale <= 0.031, "Zoom stays subtle");
+    assert.ok(samples[0].x < samples[2].x && samples[0].y < samples[2].y);
+    assert.deepEqual(samples[1], samples[3], "Camera eases back along the same path");
+    assert.deepEqual(samples[0], samples[4], "Full cycle returns without a jump");
+  }
+  await checkBackgroundMotion();
+  console.log("PASS Slow zoom and pan reverse smoothly without exposing desktop image edges");
+
   await page.evaluate(() => { window.backgroundOpacities = []; });
   await page.locator("#next-button").click();
   await page.waitForFunction(() => window.backgroundOpacities.length > 0);
   assert.ok(await page.evaluate(() => window.backgroundOpacities.some((opacity) => opacity < 0.1)));
   await loader.waitFor({ state: "hidden" });
   await page.waitForFunction(() => !document.getElementById("next-button").disabled);
+  await checkBackgroundMotion();
   console.log("PASS Switching poems also fades in immediately available images");
 
   failImages = true;
@@ -85,13 +118,17 @@ try {
   console.log("PASS Image errors clear loading and preserve the default background");
 
   failImages = false;
-  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 375, height: 812 });
   await page.locator("#next-button").click();
   await page.waitForFunction(() => document.body.dataset.background === "art" &&
     !document.getElementById("next-button").disabled,
   );
+  await checkBackgroundMotion();
+  console.log("PASS Slow camera movement also covers the mobile viewport throughout its cycle");
+  await page.emulateMedia({ reducedMotion: "reduce" });
   assert.equal(await page.locator("#art").evaluate((node) => getComputedStyle(node).transitionDuration), "0s");
+  assert.equal(await page.locator("#art").evaluate((node) => getComputedStyle(node).transform), "none");
+  assert.equal(await page.locator("#art").evaluate((node) => getComputedStyle(node).animationName), "none");
   assert.equal(await page.locator(".background-loading-dot").evaluate((node) =>
     getComputedStyle(node).animationName,
   ), "none");
