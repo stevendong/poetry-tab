@@ -160,21 +160,41 @@ $("save-api").addEventListener("click", async () => {
       throw new Error("apiInvalid");
     }
     if (provider !== "jinrishici") {
-      if (!globalThis.chrome?.permissions) throw new Error("apiExtensionOnly");
-      const allowed = await chrome.permissions.request({
-        origins: [originPattern(endpoint)],
-      });
+      if (!globalThis.chrome?.runtime?.id || !chrome.permissions?.request)
+        throw new Error("apiExtensionOnly");
+      let allowed;
+      try {
+        // Keep the request in the click gesture, before any storage awaits.
+        allowed = await chrome.permissions.request({
+          origins: [originPattern(endpoint)],
+        });
+      } catch (error) {
+        console.warn("API site permission request failed:", error);
+        // Updating unpacked files does not reload Chrome's manifest.
+        throw new Error(
+          /Only permissions specified in the manifest/i.test(error.message)
+            ? "apiReloadExtension"
+            : "apiPermissionError",
+        );
+      }
       if (!allowed) throw new Error("apiDenied");
     }
     await settingsWrites.catch(() => {});
-    settings = sanitizeSettings({ ...settings, ...config });
-    await storage.set("settings", settings);
+    const savedSettings = sanitizeSettings({ ...settings, ...config });
+    await storage.set("settings", savedSettings);
+    settings = savedSettings;
     applySettings();
     setApiStatus(settings.onlineEnabled ? "apiConnecting" : "apiSavedDisabled");
     if (settings.onlineEnabled) await nextQuote();
   } catch (error) {
     setApiStatus(
-      ["apiInvalid", "apiExtensionOnly", "apiDenied"].includes(error.message)
+      [
+        "apiInvalid",
+        "apiExtensionOnly",
+        "apiDenied",
+        "apiReloadExtension",
+        "apiPermissionError",
+      ].includes(error.message)
         ? error.message
         : "apiError",
     );

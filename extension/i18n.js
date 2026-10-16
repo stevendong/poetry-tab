@@ -94,6 +94,10 @@ export const MESSAGES = {
     apiInvalid: "请填写有效的 HTTP 或 HTTPS 接口地址，不含账号、密码或片段",
     apiExtensionOnly: "请在已安装的 Chrome 扩展中连接自定义接口",
     apiDenied: "未获得该站点访问权限，接口设置未保存",
+    apiReloadExtension:
+      "扩展权限尚未更新。请打开 chrome://extensions，点击一笺的“重新加载”，再打开新标签页保存接口。",
+    apiPermissionError:
+      "站点授权未能完成，接口设置未保存。请再次点击保存并允许访问；若仍失败，请在 chrome://extensions 重新加载一笺后重试。",
     apiConnecting: "接口已保存，正在连接…",
     apiSavedDisabled: "接口已保存；开启在线推荐后连接",
     apiError: "接口未能保存，请重试",
@@ -251,6 +255,10 @@ export const MESSAGES = {
       "Enter a valid HTTP or HTTPS API URL without credentials or a fragment",
     apiExtensionOnly: "Connect custom APIs from the installed Chrome extension",
     apiDenied: "Site access was denied. API settings were not saved",
+    apiReloadExtension:
+      "Extension permissions need updating. Open chrome://extensions, reload Yijian, then open a new tab and save the API again.",
+    apiPermissionError:
+      "Site authorization failed. API settings were not saved. Click Save again and allow access. If it still fails, reload Yijian at chrome://extensions and try again.",
     apiConnecting: "API saved. Connecting…",
     apiSavedDisabled: "API saved. Enable online recommendations to connect",
     apiError: "Could not save the API. Please try again",

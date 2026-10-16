@@ -42,6 +42,8 @@ Installing the extension requires neither Node.js nor a build step.
 
 After updating the code, reload the extension on the extensions page and open a new tab. If another new tab extension appears, check your enabled extensions.
 
+If saving an API reports that extension permissions need updating, follow the same reload steps. Refreshing the new tab alone does not update the permission manifest loaded by the browser.
+
 ## Usage
 
 | Action                                    | Result                                                |
@@ -86,6 +88,7 @@ The preview listens on `http://127.0.0.1:4173/` by default. Set `PORT` to choose
 | `npm run check`         | Validate the manifest, local resources, scripts, and illustration mappings |
 | `npm run test:browser`  | Test the new tab page, offline mode, favorites, and settings               |
 | `npm run test:online`   | Test online recommendations, caching, fallback, and saved online poems     |
+| `npm run test:api-settings` | Test stale manifest guidance, authorization failures, and API settings |
 | `npm run test:calendar` | Test calendar interaction, keyboard controls, and narrow layouts           |
 | `npm run test:language` | Test Chinese script and English switching, persistence, tab sync, and layouts |
 | `npm run pack`          | Create the extension ZIP, unpacked directory, and SHA-256 checksum         |

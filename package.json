@@ -14,6 +14,7 @@
     "pack": "node scripts/pack.mjs",
     "preview": "node scripts/preview.mjs",
     "test:online": "node tests/browser-online.mjs",
+    "test:api-settings": "node tests/api-settings-browser.mjs",
     "test:custom": "xvfb-run -a env HEADFUL=1 node tests/browser-custom.mjs"
   },
   "devDependencies": {
