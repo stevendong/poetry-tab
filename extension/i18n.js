@@ -152,6 +152,7 @@ export const MESSAGES = {
     privacyNote:
       "内置 17 组离线诗画。默认由诗画库推荐，会收到连接 IP、季节、时段等参数；今日诗词会依据 IP 等信息推荐。接口与媒体服务按其隐私政策处理请求。其他自定义站点在保存接口时申请访问权限，接口无需管理员密钥。关闭在线推荐后仅使用离线诗画。按空格换一句，按 Esc 关闭面板。",
     noScript: "请启用 JavaScript 以展示与此刻相应的诗词。",
+    backgroundLoading: "背景载入中",
     imageError: "插画暂时未能载入，请检查扩展文件是否完整",
     storageError: "本地存储暂不可用，当前诗句仍可阅读",
     favoriteAdded: "已收入收藏册",
@@ -328,6 +329,7 @@ export const MESSAGES = {
     privacyNote:
       "Includes 17 offline poems with illustrations. Poetry Service is the default and receives your connection IP, season and time parameters. Jinrishici may recommend using your IP. API and media providers handle requests under their own privacy policies. Access to other custom sites is requested when you save their API; no admin key is required. Turn off online recommendations to use offline poems only. Space changes poems; Esc closes panels.",
     noScript: "Enable JavaScript to see a poem for this moment.",
+    backgroundLoading: "Loading background",
     imageError:
       "The illustration could not load. Check that the extension files are complete.",
     storageError: "Local storage is unavailable. You can still read this poem.",

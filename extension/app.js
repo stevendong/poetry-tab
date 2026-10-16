@@ -327,6 +327,7 @@ async function displayQuote(quote, fromLibrary = false, selection = {}) {
     return;
   }
   resetBackground();
+  $("background-loading").hidden = false;
   const image = new Image();
   image.referrerPolicy = "no-referrer";
   image.src = src;
@@ -334,11 +335,11 @@ async function displayQuote(quote, fromLibrary = false, selection = {}) {
     await image.decode();
     if (version !== renderVersion) return;
     art.src = src;
-    art.hidden = false;
-    art.classList.add("loaded");
+    revealBackground(art);
     document.body.dataset.background = "art";
     document.body.dataset.quote = quote.id;
     if (remoteMedia?.type === "video") startVideo(remoteMedia, version);
+    else $("background-loading").hidden = true;
   } catch {
     if (version !== renderVersion) return;
     resetBackground();
@@ -349,6 +350,13 @@ async function displayQuote(quote, fromLibrary = false, selection = {}) {
   }
 }
 
+function revealBackground(element) {
+  element.hidden = false;
+  // Commit the transparent state after display:none, including cached images.
+  void element.offsetWidth;
+  element.classList.add("loaded");
+}
+
 function startVideo(media, version) {
   const video = $("background-video");
   video.muted = true;
@@ -356,15 +364,18 @@ function startVideo(media, version) {
   video.src = media.url;
   video.onloadeddata = () => {
     if (version !== renderVersion) return;
-    video.hidden = false;
-    video.classList.add("loaded");
+    revealBackground(video);
+    $("background-loading").hidden = true;
     document.body.dataset.background = "video";
     void video.play().catch(() => {
+      if (version !== renderVersion) return;
       video.hidden = true;
       document.body.dataset.background = "art";
     });
   };
   video.onerror = () => {
+    if (version !== renderVersion) return;
+    $("background-loading").hidden = true;
     video.hidden = true;
     video.pause();
     document.body.dataset.background = "art";
@@ -372,6 +383,7 @@ function startVideo(media, version) {
   video.load();
 }
 function resetBackground() {
+  $("background-loading").hidden = true;
   const video = $("background-video");
   video.onloadeddata = null;
   video.onerror = null;
