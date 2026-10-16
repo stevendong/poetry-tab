@@ -1,4 +1,11 @@
 @font-face {
+  font-family: "Ma Shan Zheng";
+  src: url("assets/fonts/MaShanZheng-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
   font-family: "Yijian Serif";
   src: url("assets/fonts/poetry-serif.ttf");
   font-weight: 400;
@@ -17,6 +24,8 @@
   --shade: 0.35;
   --serif:
     "Yijian Serif", "Noto Serif CJK SC", "Songti SC", "STSong", "SimSun", serif;
+  --poem-font:
+    "Ma Shan Zheng", "Kaiti SC", "Kaiti TC", "KaiTi", "STKaiti", var(--serif);
   color-scheme: dark;
 }
 :root:lang(zh-TW) {
@@ -31,6 +40,14 @@
 body {
   margin: 0;
   min-width: 320px;
+}
+body[data-poem-font="serif"] {
+  --poem-font: var(--serif);
+}
+body[data-poem-font="sans"] {
+  --poem-font:
+    system-ui, -apple-system, "PingFang SC", "PingFang TC", "Microsoft YaHei",
+    "Microsoft JhengHei", sans-serif;
 }
 button,
 input,
@@ -213,7 +230,7 @@ svg.icon {
   opacity: 0.6;
 }
 h1 {
-  font-family: var(--serif);
+  font-family: var(--poem-font);
   font-weight: 400;
   font-size: clamp(30px, 3.4vw, 58px);
   line-height: 1.68;
@@ -225,7 +242,7 @@ h1 span {
   display: block;
 }
 .byline {
-  font-family: var(--serif);
+  font-family: var(--poem-font);
   font-size: 14px;
   letter-spacing: 0.14em;
   opacity: 0.83;
@@ -660,7 +677,7 @@ html:lang(en) .clock-wrap > span {
   line-height: 1.8;
 }
 .reading-verse {
-  font-family: var(--serif);
+  font-family: var(--poem-font);
   font-size: 21px;
   line-height: 1.9;
   letter-spacing: 0.08em;
@@ -690,7 +707,7 @@ html:lang(en) .clock-wrap > span {
   padding: 18px 20px;
 }
 .original p {
-  font-family: var(--serif);
+  font-family: var(--poem-font);
   white-space: pre-line;
 }
 .sheet-foot {
@@ -801,7 +818,7 @@ input[type="range"] {
 }
 .saved-quote strong {
   display: block;
-  font-family: var(--serif);
+  font-family: var(--poem-font);
   font-size: 16px;
   font-weight: 400;
   line-height: 1.7;

@@ -145,6 +145,15 @@ test("specific seasonal and solar-term matches get higher weight", () => {
   );
 });
 
+test("poem fonts default to brush calligraphy and accept only built-in choices", () => {
+  assert.equal(DEFAULT_SETTINGS.poemFont, "brush");
+  assert.equal(sanitizeSettings({ showClock: false }).poemFont, "brush");
+  for (const poemFont of ["brush", "serif", "sans"])
+    assert.equal(sanitizeSettings({ poemFont }).poemFont, poemFont);
+  for (const poemFont of [null, 3, "unknown", "url(https://example.com/font)"])
+    assert.equal(sanitizeSettings({ poemFont }).poemFont, "brush");
+});
+
 test("invalid data fails clearly and corrupt settings recover to defaults", () => {
   assert.throws(() => getContext(new Date("bad")), TypeError);
   assert.throws(

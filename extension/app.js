@@ -100,6 +100,7 @@ function applySettings() {
     String(settings.shade / 100),
   );
   document.body.classList.toggle("large-text", settings.textSize === "large");
+  document.body.dataset.poemFont = settings.poemFont;
   $("clock-wrap").hidden = !settings.showClock;
   $("inline-meaning").hidden = !settings.showMeaning;
   $("online-enabled").checked = settings.onlineEnabled;
@@ -107,6 +108,7 @@ function applySettings() {
   $("show-clock").checked = settings.showClock;
   $("show-meaning").checked = settings.showMeaning;
   $("text-size").value = settings.textSize;
+  $("poem-font").value = settings.poemFont;
   $("shade").value = settings.shade;
   syncApiSettings();
   if (current) updateQuoteText();
@@ -615,6 +617,7 @@ $("settings-form").addEventListener("change", (event) => {
     hemisphere: $("hemisphere").value,
     showClock: $("show-clock").checked,
     showMeaning: $("show-meaning").checked,
+    poemFont: $("poem-font").value,
     textSize: $("text-size").value,
     shade: Number($("shade").value),
   });

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile, access, readdir } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
 import { QUOTES } from "../extension/quotes.js";
 const root = fileURLToPath(new URL("../extension/", import.meta.url));
 const manifest = JSON.parse(await readFile(root + "manifest.json", "utf8"));
@@ -38,6 +39,15 @@ for (const name of (await readdir(root)).filter((file) =>
 }
 await access(root + "assets/fonts/poetry-serif.ttf");
 await access(root + "assets/fonts/OFL.txt");
+const brushFont = JSON.parse(
+  await readFile(root + "assets/fonts/MaShanZheng.provenance.json", "utf8"),
+);
+const brushBytes = await readFile(root + "assets/fonts/" + brushFont.file);
+assert.equal(
+  createHash("sha256").update(brushBytes).digest("hex"),
+  brushFont.sha256,
+);
+await access(root + "assets/fonts/" + brushFont.licenseFile);
 const prompts = JSON.parse(
   await readFile(root + "assets/art/prompts.json", "utf8"),
 );

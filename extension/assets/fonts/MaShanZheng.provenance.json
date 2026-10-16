@@ -1,0 +1,14 @@
+{
+  "family": "Ma Shan Zheng",
+  "designer": "Ma ShanZheng",
+  "weight": 400,
+  "file": "MaShanZheng-Regular.ttf",
+  "source": "https://raw.githubusercontent.com/googlefonts/mashanzheng/6bfdbe288f5935c6e9072cdd6ab1aa102a006aab/fonts/ttf/MaShanZheng-Regular.ttf",
+  "repository": "https://github.com/googlefonts/mashanzheng",
+  "commit": "6bfdbe288f5935c6e9072cdd6ab1aa102a006aab",
+  "sha256": "b844c59bf20bf530e41c20d6ff12b383b23a2e553b9b68cc89f070869213155d",
+  "license": "SIL Open Font License 1.1",
+  "licenseFile": "MaShanZheng-OFL.txt",
+  "licenseSource": "https://raw.githubusercontent.com/googlefonts/mashanzheng/6bfdbe288f5935c6e9072cdd6ab1aa102a006aab/OFL.txt",
+  "coverage": "Full upstream font. Missing glyphs fall back to local Kai or serif fonts."
+}

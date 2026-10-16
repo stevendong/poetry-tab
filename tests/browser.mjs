@@ -83,6 +83,22 @@ try {
     ) > 0,
   );
   pass("Initial quote matches browser time and season");
+  assert.equal(await page.getAttribute("body", "data-poem-font"), "brush");
+  await page.evaluate(() => document.fonts.load('48px "Ma Shan Zheng"'));
+  const fontSession = await browser.newCDPSession(page);
+  await fontSession.send("DOM.enable");
+  await fontSession.send("CSS.enable");
+  const { root: documentNode } = await fontSession.send("DOM.getDocument");
+  const { nodeId } = await fontSession.send("DOM.querySelector", {
+    nodeId: documentNode.nodeId,
+    selector: "#verse span",
+  });
+  const { fonts } = await fontSession.send("CSS.getPlatformFontsForNode", { nodeId });
+  assert.ok(fonts.some((font) =>
+    font.isCustomFont && /Ma.?Shan.?Zheng/i.test(font.familyName) && font.glyphCount > 0,
+  ));
+  await fontSession.detach();
+  pass("Default poem renders with the actual bundled Ma Shan Zheng brush font");
   await mkdir(root + "artifacts", { recursive: true });
   await page.screenshot({ path: root + "artifacts/newtab-desktop.png" });
   await page.locator("#read-button").click();
@@ -133,6 +149,24 @@ try {
   );
   pass("Button and Space switch quotes without immediate repetition");
   await page.locator("#settings-button").click();
+  const quoteBeforeFontChange = await page.getAttribute("body", "data-quote");
+  for (const [font, family] of [
+    ["serif", "Yijian Serif"],
+    ["brush", "Ma Shan Zheng"],
+    ["sans", "system-ui"],
+  ]) {
+    await page.locator("#poem-font").selectOption(font);
+    await page.waitForFunction(async (font) =>
+      (await chrome.storage.local.get("settings")).settings.poemFont === font,
+      font,
+    );
+    for (const selector of ["#verse", "#byline", "#reading-verse", "#fulltext"])
+      assert.ok((await page.locator(selector).evaluate((node) =>
+        getComputedStyle(node).fontFamily,
+      )).includes(family));
+    assert.equal(await page.getAttribute("body", "data-quote"), quoteBeforeFontChange);
+  }
+  pass("All three fonts apply instantly to poems and reading text without changing the poem");
   await page.locator("#show-clock").uncheck();
   await page.locator("#show-meaning").check();
   await page.locator("#text-size").selectOption("large");
@@ -146,6 +180,7 @@ try {
   assert.ok(await page.locator("#inline-meaning").isVisible());
   await page.reload();
   await ready(page);
+  assert.equal(await page.getAttribute("body", "data-poem-font"), "sans");
   assert.ok(await page.locator("#clock-wrap").isHidden());
   assert.ok(await page.locator("#inline-meaning").isVisible());
   assert.ok(
@@ -196,6 +231,14 @@ try {
     tabs.map((tab) => tab.getAttribute("body", "data-quote")),
   );
   assert.notEqual(concurrentIds[0], concurrentIds[1]);
+  await tabs[0].locator("#settings-button").click();
+  await tabs[0].locator("#poem-font").selectOption("brush");
+  await Promise.all([page, ...tabs].map((tab) => tab.waitForFunction(() =>
+    document.body.dataset.poemFont === "brush",
+  )));
+  await tabs[0].keyboard.press("Escape");
+  await page.evaluate(() => document.fonts.load('48px "Ma Shan Zheng"'));
+  pass("Font preference syncs between open tabs and brush font remains available offline");
   await worker.evaluate(async () =>
     chrome.storage.local.set({ favorites: [] }),
   );

@@ -17,7 +17,7 @@
 - **本地收藏**：喜欢的诗文保存在当前浏览器中，离线可读；收藏和设置在同一浏览器配置的标签页之间同步。
 - **万年历**：点击右上角日期，查看 1900—2100 年的公历、农历、生肖与节气，支持年月切换和返回今天。
 - **繁简中文与英文界面**：在「设置 → 界面语言」选择简体中文、繁體中文或 English，也可跟随浏览器。中文选项同时切换诗文、解读、收藏和万年历的繁简体，设置自动保存并同步到已打开的标签页；文字转换完全离线完成。
-- **阅读偏好**：可调整所在半球、时钟、句意显示、字号及背景遮罩。
+- **阅读偏好**：可调整所在半球、时钟、句意显示、诗句字体、字号及背景遮罩。字体可选毛笔楷书（默认）、宋体或系统字体，自动保存并同步到已打开的标签页。
 
 <details>
 <summary>查看万年历截图</summary>
@@ -58,6 +58,8 @@
 | `Esc`                          | 先关闭打开的下拉菜单，再关闭面板 |
 
 在万年历中，可用方向键选择日期，`PageUp` / `PageDown` 切换月份，`Home` / `End` 移到当前周的首日或末日。
+
+在「设置 → 诗句字体」切换字体，主界面、阅读面板和收藏诗句即时生效。默认毛笔楷书使用随扩展打包的马善政字体，离线可用；未覆盖的生僻字或繁体字自动回退到本机楷体或宋体。
 
 右上角仅在节气当天显示节气名称。日期与时钟使用本机时区，节气交接日期采用近似计算；离线四季以立春、立夏、立秋、立冬划分，南半球的季节相反。
 
@@ -169,4 +171,5 @@ docs/images/           README 界面截图
 | 繁简体转换         | [OpenCC JavaScript](https://github.com/nk2028/opencc-js) 1.4.2，代码与词典随扩展打包；[来源与许可证](extension/vendor/opencc/README.md) |
 | 意境插画           | AI 辅助生成；提示词与生成记录见 [`prompts.json`](extension/assets/art/prompts.json)                                                                                   |
 | 诗文字体           | Noto Serif SC，本地子集字体；遵循 [SIL Open Font License 1.1](extension/assets/fonts/OFL.txt)，来源记录见 [`provenance.json`](extension/assets/fonts/provenance.json) |
+| 默认毛笔楷书       | 马善政 Ma Shan Zheng，完整字体随扩展打包；[OFL 1.1 许可证](extension/assets/fonts/MaShanZheng-OFL.txt)及[来源记录](extension/assets/fonts/MaShanZheng.provenance.json) |
 | 英文节气名称       | 参考[香港天文台](https://www.hko.gov.hk/en/gts/time/24solarterms.htm)                                                                                                 |

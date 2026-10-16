@@ -9,6 +9,7 @@ export const DEFAULT_SETTINGS = {
   hemisphere: "north",
   showClock: true,
   showMeaning: false,
+  poemFont: "brush",
   textSize: "normal",
   shade: 35,
 };
@@ -30,6 +31,9 @@ export function sanitizeSettings(value = {}) {
     showClock: typeof value.showClock === "boolean" ? value.showClock : true,
     showMeaning:
       typeof value.showMeaning === "boolean" ? value.showMeaning : false,
+    poemFont: ["brush", "serif", "sans"].includes(value.poemFont)
+      ? value.poemFont
+      : DEFAULT_SETTINGS.poemFont,
     textSize: value.textSize === "large" ? "large" : "normal",
     shade: Number.isFinite(value.shade)
       ? Math.min(70, Math.max(15, value.shade))

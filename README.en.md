@@ -16,7 +16,7 @@ Yijian is a Chrome new tab extension that brings classical Chinese poetry, prose
 - **Local favorites:** Saved poems remain readable offline. Favorites and preferences sync between tabs in the same browser profile.
 - **Calendar:** Click the date to browse Gregorian and Chinese lunar dates, zodiac years, and solar terms from 1900 to 2100.
 - **Simplified Chinese, Traditional Chinese, and English UI:** Choose a language in Settings or follow the browser. Chinese options also switch the script of poems, commentary, favorites, and the calendar. Conversion works entirely offline; preferences save automatically and update open tabs.
-- **Reading preferences:** Choose your hemisphere, clock visibility, explanation display, text size, and background shade.
+- **Reading preferences:** Choose your hemisphere, clock visibility, explanation display, poem font, text size, and background shade. Font choices include brush calligraphy (default), serif, and the system font; preferences save automatically and sync across open tabs.
 
 <details>
 <summary>Calendar preview (Chinese interface)</summary>
@@ -57,6 +57,8 @@ If saving an API reports that extension permissions need updating, follow the sa
 | `Esc`                                     | Close an open dropdown first, then the panel          |
 
 In the calendar, use the arrow keys to select dates, `PageUp` / `PageDown` to change months, and `Home` / `End` to move to the first or last day of the week.
+
+Change Settings → Poem font to update poems on the main page, reading panel, and favorites instantly. The default Ma Shan Zheng brush font is bundled for offline use. Unsupported rare or Traditional Chinese characters fall back to local Kai or serif fonts.
 
 The header shows a solar term only on its date. Dates and the clock follow your local time zone. Solar term dates are approximate. Offline seasons begin at the traditional solar terms for spring, summer, autumn, and winter, and reverse in the Southern Hemisphere.
 
@@ -124,7 +126,7 @@ npm run pack
 
 Output goes to `dist/`: `poetry-tab/` is the loadable extension directory, `poetry-tab-v<version>.zip` is the archive, and the adjacent `.sha256` file contains its checksum. The `dist/` directory is excluded from version control; generate it after downloading the source.
 
-The archive includes the project's MIT license, the font's OFL license, and the MIT / Apache-2.0 licenses for OpenCC code and dictionaries.
+The archive includes the project's MIT license, both fonts' OFL licenses, and the MIT / Apache-2.0 licenses for OpenCC code and dictionaries.
 
 ### Project structure
 
@@ -163,6 +165,7 @@ The project uses the [MIT License](LICENSE). Third-party fonts, texts, and onlin
 | Chinese script conversion             | [OpenCC JavaScript](https://github.com/nk2028/opencc-js) 1.4.2, bundled locally; see [provenance and licenses](extension/vendor/opencc/README.md) |
 | Illustrations                         | AI-assisted artwork; prompts and generation records are in [`prompts.json`](extension/assets/art/prompts.json)                                                       |
 | Poem font                             | Bundled Noto Serif SC subset, under the [SIL Open Font License 1.1](extension/assets/fonts/OFL.txt); see [`provenance.json`](extension/assets/fonts/provenance.json) |
+| Default brush calligraphy             | Full Ma Shan Zheng font, bundled under [OFL 1.1](extension/assets/fonts/MaShanZheng-OFL.txt); see [provenance](extension/assets/fonts/MaShanZheng.provenance.json) |
 | English solar term names              | Based on the [Hong Kong Observatory calendar](https://www.hko.gov.hk/en/gts/time/24solarterms.htm)                                                                   |
 
 ## Custom poetry APIs (v0.3.0)
