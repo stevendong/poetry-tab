@@ -1,13 +1,6 @@
 @font-face {
   font-family: "Ma Shan Zheng";
-  src: url("assets/fonts/MaShanZheng-Regular.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Yijian Serif";
-  src: url("assets/fonts/poetry-serif.ttf");
+  src: url("assets/fonts/MaShanZheng-subset.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -23,7 +16,7 @@
   background: #292e30;
   --shade: 0.35;
   --serif:
-    "Yijian Serif", "Noto Serif CJK SC", "Songti SC", "STSong", "SimSun", serif;
+    "Noto Serif CJK SC", "Songti SC", "STSong", "SimSun", serif;
   --poem-font:
     "Ma Shan Zheng", "Kaiti SC", "Kaiti TC", "KaiTi", "STKaiti", var(--serif);
   color-scheme: dark;
@@ -32,7 +25,7 @@
   font-family:
     system-ui, -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
   --serif:
-    "Noto Serif CJK TC", "Songti TC", "PMingLiU", "Yijian Serif", serif;
+    "Noto Serif CJK TC", "Songti TC", "PMingLiU", serif;
 }
 * {
   box-sizing: border-box;

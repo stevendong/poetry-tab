@@ -58,7 +58,7 @@ If saving an API reports that extension permissions need updating, follow the sa
 
 In the calendar, use the arrow keys to select dates, `PageUp` / `PageDown` to change months, and `Home` / `End` to move to the first or last day of the week.
 
-Change Settings → Poem font to update poems on the main page, reading panel, and favorites instantly. The default Ma Shan Zheng brush font is bundled for offline use. Unsupported rare or Traditional Chinese characters fall back to local Kai or serif fonts.
+Change Settings → Poem font to update poems on the main page, reading panel, and favorites instantly. A local Ma Shan Zheng WOFF2 subset covers the display lines, authors and titles of the bundled poems. Other characters fall back to local Kai or serif fonts. Serif and sans-serif options use system fonts.
 
 The header shows a solar term only on its date. Dates and the clock follow your local time zone. Solar term dates are approximate. Offline seasons begin at the traditional solar terms for spring, summer, autumn, and winter, and reverse in the Southern Hemisphere.
 
@@ -126,6 +126,8 @@ npm run pack
 
 Output goes to `dist/`: `poetry-tab/` is the loadable extension directory, `poetry-tab-v<version>.zip` is the archive, and the adjacent `.sha256` file contains its checksum. The `dist/` directory is excluded from version control; generate it after downloading the source.
 
+The ZIP must stay below 1,000,000 bytes or packaging fails. All 17 offline illustrations remain bundled at 640px wide; online images and videos load from their original service URLs. Asset and original-file records are maintained on the [Notion project page](https://www.notion.so/3f92dbec685c81fa87bbf6bf606e2844).
+
 The archive includes the project's MIT license, both fonts' OFL licenses, and the MIT / Apache-2.0 licenses for OpenCC code and dictionaries.
 
 ### Project structure
@@ -164,8 +166,8 @@ The project uses the [MIT License](LICENSE). Third-party fonts, texts, and onlin
 | Default online poems, media and commentary | Poetry Service recommendations at `https://poetry-api.nabulalogic.com` |
 | Chinese script conversion             | [OpenCC JavaScript](https://github.com/nk2028/opencc-js) 1.4.2, bundled locally; see [provenance and licenses](extension/vendor/opencc/README.md) |
 | Illustrations                         | AI-assisted artwork; prompts and generation records are in [`prompts.json`](extension/assets/art/prompts.json)                                                       |
-| Poem font                             | Bundled Noto Serif SC subset, under the [SIL Open Font License 1.1](extension/assets/fonts/OFL.txt); see [`provenance.json`](extension/assets/fonts/provenance.json) |
-| Default brush calligraphy             | Full Ma Shan Zheng font, bundled under [OFL 1.1](extension/assets/fonts/MaShanZheng-OFL.txt); see [provenance](extension/assets/fonts/MaShanZheng.provenance.json) |
+| Serif and sans-serif fonts             | Installed system fonts; no additional font files are distributed |
+| Default brush calligraphy             | Bundled Ma Shan Zheng WOFF2 subset under [OFL 1.1](extension/assets/fonts/MaShanZheng-OFL.txt); see [provenance](extension/assets/fonts/MaShanZheng.provenance.json) |
 | English solar term names              | Based on the [Hong Kong Observatory calendar](https://www.hko.gov.hk/en/gts/time/24solarterms.htm)                                                                   |
 
 ## Custom poetry APIs (v0.3.0)

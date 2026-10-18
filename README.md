@@ -59,7 +59,7 @@
 
 在万年历中，可用方向键选择日期，`PageUp` / `PageDown` 切换月份，`Home` / `End` 移到当前周的首日或末日。
 
-在「设置 → 诗句字体」切换字体，主界面、阅读面板和收藏诗句即时生效。默认毛笔楷书使用随扩展打包的马善政字体，离线可用；未覆盖的生僻字或繁体字自动回退到本机楷体或宋体。
+在「设置 → 诗句字体」切换字体，主界面、阅读面板和收藏诗句即时生效。默认毛笔楷书使用本地马善政 WOFF2 子集，覆盖内置诗句的展示文字、作者和题名；其他文字回退到本机楷体或宋体。宋体和无衬线选项使用系统字体。
 
 右上角仅在节气当天显示节气名称。日期与时钟使用本机时区，节气交接日期采用近似计算；离线四季以立春、立夏、立秋、立冬划分，南半球的季节相反。
 
@@ -132,6 +132,8 @@ npm run pack
 
 输出位于 `dist/`：`poetry-tab/` 为可加载的扩展目录，`poetry-tab-v<version>.zip` 为压缩包，旁边的 `.sha256` 文件用于校验。`dist/` 不纳入版本控制，下载源码后需自行生成。
 
+ZIP 限制为小于 1,000,000 字节，超出时打包失败。随包保留 17 张 640px 宽的压缩离线插画，在线图片和视频仍按服务端地址加载。素材压缩及原件保留记录见 [Notion 项目页](https://www.notion.so/3f92dbec685c81fa87bbf6bf606e2844)。
+
 压缩包包含项目的 MIT 许可证、字体的 OFL 许可证，以及 OpenCC 转换代码与词典的 MIT / Apache-2.0 许可证。
 
 ### 项目结构
@@ -170,6 +172,6 @@ docs/images/           README 界面截图
 | 默认在线诗画与解读 | poetry-service 诗画库，使用 `https://poetry-api.nabulalogic.com` 推荐接口 |
 | 繁简体转换         | [OpenCC JavaScript](https://github.com/nk2028/opencc-js) 1.4.2，代码与词典随扩展打包；[来源与许可证](extension/vendor/opencc/README.md) |
 | 意境插画           | AI 辅助生成；提示词与生成记录见 [`prompts.json`](extension/assets/art/prompts.json)                                                                                   |
-| 诗文字体           | Noto Serif SC，本地子集字体；遵循 [SIL Open Font License 1.1](extension/assets/fonts/OFL.txt)，来源记录见 [`provenance.json`](extension/assets/fonts/provenance.json) |
-| 默认毛笔楷书       | 马善政 Ma Shan Zheng，完整字体随扩展打包；[OFL 1.1 许可证](extension/assets/fonts/MaShanZheng-OFL.txt)及[来源记录](extension/assets/fonts/MaShanZheng.provenance.json) |
+| 宋体与无衬线       | 使用系统已安装的字体，不随扩展分发 |
+| 默认毛笔楷书       | 马善政 Ma Shan Zheng，随包提供 WOFF2 子集；[OFL 1.1 许可证](extension/assets/fonts/MaShanZheng-OFL.txt)及[来源记录](extension/assets/fonts/MaShanZheng.provenance.json) |
 | 英文节气名称       | 参考[香港天文台](https://www.hko.gov.hk/en/gts/time/24solarterms.htm)                                                                                                 |

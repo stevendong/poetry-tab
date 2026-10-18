@@ -32,7 +32,7 @@ async function ready(page) {
   assert.ok(
     await page
       .locator("#art")
-      .evaluate((img) => img.naturalWidth >= 1000 && img.naturalHeight >= 800),
+      .evaluate((img) => img.naturalWidth >= 640 && img.naturalHeight >= 400),
   );
 }
 function observe(page) {
@@ -151,7 +151,7 @@ try {
   await page.locator("#settings-button").click();
   const quoteBeforeFontChange = await page.getAttribute("body", "data-quote");
   for (const [font, family] of [
-    ["serif", "Yijian Serif"],
+    ["serif", "Songti SC"],
     ["brush", "Ma Shan Zheng"],
     ["sans", "system-ui"],
   ]) {

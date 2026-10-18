@@ -2,13 +2,16 @@
   "family": "Ma Shan Zheng",
   "designer": "Ma ShanZheng",
   "weight": 400,
-  "file": "MaShanZheng-Regular.ttf",
+  "file": "MaShanZheng-subset.woff2",
   "source": "https://raw.githubusercontent.com/googlefonts/mashanzheng/6bfdbe288f5935c6e9072cdd6ab1aa102a006aab/fonts/ttf/MaShanZheng-Regular.ttf",
   "repository": "https://github.com/googlefonts/mashanzheng",
   "commit": "6bfdbe288f5935c6e9072cdd6ab1aa102a006aab",
-  "sha256": "b844c59bf20bf530e41c20d6ff12b383b23a2e553b9b68cc89f070869213155d",
+  "sha256": "31e3f1cd9154624610fdef4e05c56931562b5a229616de200d1a94e422a93c06",
   "license": "SIL Open Font License 1.1",
   "licenseFile": "MaShanZheng-OFL.txt",
   "licenseSource": "https://raw.githubusercontent.com/googlefonts/mashanzheng/6bfdbe288f5935c6e9072cdd6ab1aa102a006aab/OFL.txt",
-  "coverage": "Full upstream font. Missing glyphs fall back to local Kai or serif fonts."
+  "coverage": "WOFF2 subset for the display lines, titles and authors of all 17 offline poems, including Simplified/Traditional conversions. Other characters use local Kai or serif fallback fonts.",
+  "originalSha256": "b844c59bf20bf530e41c20d6ff12b383b23a2e553b9b68cc89f070869213155d",
+  "glyphCount": 236,
+  "subsetCharacters": " ·—…、。《》一万三上不业两中丰举九乡二于云京亭低佳使來修停元先兩共兴其净出刘判別别到前劉十千南参參发取叶君听問啼圆圓坐塞壁声处外夜大天头好如子孟孤宗官寒寺小尖居山岑崇平年幽开弃张張归徐忽思惠愛慈才接故文方於无日早时明易映春是時晓晚景暖暝曉最月有望木李杜来杨杯松林枝枫柳树样桃梨棄楊楓業樣樹橘橙欧欲歌歐武歸水江池沙河泉波流浩海淨清漠潮烟無然煙照爱片牧独獨王生疾發白直看眠知石碧秀秋稻穷窮立竹笠紅終綠維繁红终维绿翁而聞聲聽能至興舉舟花芳苏若荷莲萬落葉蓑蓮蘇處虚虛蛙蜓蜻行裡西覺觉角記說记说豐賦贈赋赠赤起車軾车轼辛连送連道鄉醉里野釣钓長长開間问间闻阳阴陰陽雪雲霜露静靜須頭须風风飲饮香鳥鴨鸟鸭黃黄！（），：？"
 }

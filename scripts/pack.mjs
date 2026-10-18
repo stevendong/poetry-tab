@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { basename } from "node:path";
 import { createZip } from "./zip.mjs";
+import assert from "node:assert/strict";
 const root = fileURLToPath(new URL("../", import.meta.url));
 execFileSync(process.execPath, [root + "scripts/check.mjs"], {
   stdio: "inherit",
@@ -32,7 +33,9 @@ async function collect(relative = "") {
   }
 }
 await collect();
-await writeFile(archive, createZip(entries));
+const zip = createZip(entries);
+assert.ok(zip.length < 1_000_000, `Extension ZIP exceeds the 1 MB budget: ${zip.length} bytes`);
+await writeFile(archive, zip);
 const bytes = await readFile(archive);
 await writeFile(
   archive + ".sha256",

@@ -37,8 +37,6 @@ for (const name of (await readdir(root)).filter((file) =>
     await access(root + dependency);
   }
 }
-await access(root + "assets/fonts/poetry-serif.ttf");
-await access(root + "assets/fonts/OFL.txt");
 const brushFont = JSON.parse(
   await readFile(root + "assets/fonts/MaShanZheng.provenance.json", "utf8"),
 );
@@ -56,7 +54,10 @@ for (const quote of QUOTES) {
   const bytes = await readFile(root + `assets/art/${quote.art}.webp`);
   assert.equal(bytes.toString("ascii", 0, 4), "RIFF");
   assert.equal(bytes.toString("ascii", 8, 12), "WEBP");
-  assert.ok(bytes.length > 20000, `Real illustration for ${quote.id}`);
+  assert.ok(bytes.length > 2000, `Real illustration for ${quote.id}`);
+  const prompt = prompts.find((p) => p.id === quote.art);
+  assert.equal(prompt?.derivative?.width, 640);
+  assert.equal(createHash("sha256").update(bytes).digest("hex"), prompt.derivative.sha256);
   assert.ok(
     prompts.some(
       (p) => p.id === quote.art && p.prompt && p.tool === "image_gen built-in",
