@@ -40,7 +40,7 @@ export function createServiceClient(
 ) {
   const flights = new Map();
   return {
-    async get(context, settings) {
+    async get(context, settings, { cacheOnly = false } = {}) {
       let endpoint;
       try {
         endpoint = endpointFor(settings);
@@ -56,7 +56,8 @@ export function createServiceClient(
         context.hemisphere,
         context.term,
       ]);
-      if (flights.has(key)) return flights.get(key);
+      // Startup reads must not wait behind a refresh already using the network.
+      if (!cacheOnly && flights.has(key)) return flights.get(key);
       const load = async () => {
         const state = await storage.get("servicePoolState", {});
         const same = state?.key === key;
@@ -72,6 +73,12 @@ export function createServiceClient(
                 )
             : [];
         const stale = age >= 0 && age < 600000 ? items : [];
+        if (cacheOnly)
+          return {
+            status: same && state.retryAt > now() ? state.failure || "unavailable" : "cached",
+            quotes: stale,
+            cached: stale.length > 0,
+          };
         if (same && state.retryAt > now())
           return {
             status: state.failure || "unavailable",
@@ -138,6 +145,7 @@ export function createServiceClient(
           clearTimeout(timer);
         }
       };
+      if (cacheOnly) return load();
       const flight = load();
       flights.set(key, flight);
       try {

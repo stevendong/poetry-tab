@@ -38,7 +38,11 @@ try {
   await page.goto(base, { waitUntil: "domcontentloaded" });
   const loader = page.locator("#background-loading");
   await loader.waitFor({ state: "visible" });
-  assert.equal(await loader.evaluate((node) => getComputedStyle(node).opacity), "0");
+  const appearance = await loader.evaluate((node) => {
+    const animation = node.getAnimations().find((item) => item.animationName === "background-loading-appear");
+    return { delay: animation.effect.getTiming().delay, firstOpacity: animation.effect.getKeyframes()[0].opacity };
+  });
+  assert.deepEqual(appearance, { delay: 400, firstOpacity: "0" });
   await page.waitForFunction(() =>
     Number(getComputedStyle(document.getElementById("background-loading")).opacity) === 1,
   );

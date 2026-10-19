@@ -7,6 +7,7 @@ import { resolveFavorite } from "./online.js";
 import { solarTermOnDate } from "./calendar.js";
 import { initCalendar } from "./calendar-view.js";
 import { createSelect } from "./custom-select.js";
+import { createBackgroundPrefetch } from "./background-prefetch.js";
 import {
   t,
   setLanguage,
@@ -39,6 +40,10 @@ let currentFromLibrary = false;
 let waitingForOnline = false;
 let toastKey;
 let apiStatusKey = "";
+const backgroundPrefetch = createBackgroundPrefetch();
+let prefetchSources = [];
+let backgroundReadyVersion = 0;
+let mediaConfigKey = "";
 
 function toast(key) {
   clearTimeout(toastTimer);
@@ -86,6 +91,15 @@ function updateClock() {
 }
 
 function applySettings() {
+  const nextMediaKey = JSON.stringify([
+    settings.onlineEnabled, settings.provider, settings.serviceUrl,
+    settings.customUrl, settings.mediaPreference, settings.hemisphere,
+  ]);
+  if (nextMediaKey !== mediaConfigKey) {
+    backgroundPrefetch.stop();
+    prefetchSources = [];
+    mediaConfigKey = nextMediaKey;
+  }
   setLanguage(settings.language);
   translateDocument();
   languagePicker.setLabels([
@@ -291,6 +305,8 @@ function updateQuoteText() {
 
 function displayQuote(quote, fromLibrary = false, selection = {}) {
   const version = ++renderVersion;
+  backgroundPrefetch.stop();
+  prefetchSources = Array.isArray(selection.prefetch) ? selection.prefetch : [];
   current = quote;
   currentSelection = selection;
   currentFromLibrary = fromLibrary;
@@ -320,6 +336,7 @@ async function displayBackground(quote, version) {
     );
   if (!src) {
     resetBackground();
+    backgroundReady(version);
     return;
   }
   if (
@@ -328,6 +345,7 @@ async function displayBackground(quote, version) {
     art.classList.contains("loaded") &&
     !art.hidden
   ) {
+    backgroundReady(version);
     return;
   }
   resetBackground();
@@ -349,8 +367,10 @@ async function displayBackground(quote, version) {
       remoteMedia?.type !== "video" ||
       $("background-video").error ||
       !$("background-video").hidden
-    )
+    ) {
       $("background-loading").hidden = true;
+      backgroundReady(version);
+    }
   } catch {
     if (version !== renderVersion) return;
     // A missing poster must not cancel a video that can still play.
@@ -362,6 +382,21 @@ async function displayBackground(quote, version) {
     $("content-source").title = t("defaultBackground");
     toast(remoteMedia ? "remoteImageError" : "imageError");
   }
+}
+
+function warmBackgrounds() {
+  if (!settings.onlineEnabled || backgroundReadyVersion !== renderVersion) return;
+  const media = current?.provider === "custom" ? current.media : null;
+  const src = media
+    ? media.type === "video" ? media.posterUrl : media.url
+    : $("art").getAttribute("src");
+  backgroundPrefetch.warm(prefetchSources.filter((source) => source !== src));
+}
+
+function backgroundReady(version) {
+  if (version !== renderVersion) return;
+  backgroundReadyVersion = version;
+  warmBackgrounds();
 }
 
 function revealBackground(element) {
@@ -383,6 +418,7 @@ function startVideo(media, version) {
     revealBackground(video);
     $("background-loading").hidden = true;
     document.body.dataset.background = "video";
+    backgroundReady(version);
     void video.play().catch(() => {
       if (version !== renderVersion) return;
       video.hidden = true;
@@ -400,6 +436,8 @@ function startVideo(media, version) {
   video.load();
 }
 function resetBackground() {
+  backgroundPrefetch.stop();
+  backgroundReadyVersion = 0;
   $("background-loading").hidden = true;
   const video = $("background-video");
   video.onloadeddata = null;
@@ -414,6 +452,30 @@ function resetBackground() {
   $("art").removeAttribute("src");
   $("art").classList.remove("loaded");
   document.body.dataset.background = "default";
+}
+
+async function refreshCandidates() {
+  const version = renderVersion;
+  const interaction = interactionVersion;
+  const config = mediaConfigKey;
+  try {
+    const result = await request({ type: "select", refreshOnly: true, currentId: current?.id });
+    if (!result || version !== renderVersion || interaction !== interactionVersion ||
+      config !== mediaConfigKey || !settings.onlineEnabled) return;
+    if (["empty", "permission"].includes(result.status)) {
+      await nextQuote();
+      return;
+    }
+    // Refresh the pool without replacing a poem already being read.
+    currentSelection = { ...currentSelection, status: result.status };
+    updateQuoteText();
+    setApiStatus(result.status === "unavailable" ? "apiCachedUnavailable" :
+      result.status === "rate_limited" ? "apiRateLimited" : "apiSuccess");
+    prefetchSources = Array.isArray(result.prefetch) ? result.prefetch : [];
+    warmBackgrounds();
+  } catch {
+    // Keep the cached poem and its matching background on a transient failure.
+  }
 }
 
 async function nextQuote(options = {}) {
@@ -760,18 +822,34 @@ async function init() {
     toast("dataError");
   }
   applySettings();
-  const rawHistory = await storage.get("history", []).catch(() => []);
-  displayQuote(
-    selectQuote(QUOTES, context, Array.isArray(rawHistory) ? rawHistory : []),
-  );
-  if (settings.onlineEnabled && globalThis.chrome?.runtime?.id) {
-    waitingForOnline = true;
-    updateQuoteText();
+  const startupConfig = mediaConfigKey;
+  const [rawHistory, cached] = await Promise.all([
+    storage.get("history", []).catch(() => []),
+    settings.onlineEnabled && globalThis.chrome?.runtime?.id
+      ? request({ type: "select", cacheOnly: true, initial: true }).catch(() => null)
+      : null,
+  ]);
+  if (cached?.quote && startupConfig === mediaConfigKey) {
+    context = cached.context;
+    displayQuote(cached.quote, false, cached);
+    $("next-button").disabled = false;
+    $("poetry").setAttribute("aria-busy", "false");
+    void refreshCandidates();
+  } else {
+    displayQuote(selectQuote(QUOTES, context, Array.isArray(rawHistory) ? rawHistory : []));
+    if (settings.onlineEnabled && globalThis.chrome?.runtime?.id) {
+      waitingForOnline = true;
+      updateQuoteText();
+    }
+    await nextQuote({ initial: true });
   }
-  await nextQuote({ initial: true });
   setInterval(updateClock, 15000);
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) updateClock();
+    if (document.hidden) backgroundPrefetch.stop();
+    else {
+      updateClock();
+      warmBackgrounds();
+    }
   });
 }
 init();

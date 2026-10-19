@@ -6,6 +6,12 @@ import { getContext, selectQuote, scoreQuote } from "./context.js";
 import { sanitizeSettings } from "./storage.js";
 import { restoreOnline, resolveFavorite } from "./online.js";
 
+function backgroundSources(quotes = []) {
+  return [...new Set(quotes.map((quote) =>
+    quote.media?.type === "video" ? quote.media.posterUrl : quote.media?.url,
+  ).filter(Boolean))].slice(0, 10);
+}
+
 export function createStateController(
   storage,
   {
@@ -32,6 +38,7 @@ export function createStateController(
             result = await onlineClient.get(context, settings, {
               currentId: message.currentId,
               history: await storage.get("history", []),
+              cacheOnly: message.cacheOnly === true,
             });
           } catch {
             result = { status: "unavailable" };
@@ -60,14 +67,22 @@ export function createStateController(
             latest.mediaPreference !== settings.mediaPreference ||
             latest.hemisphere !== settings.hemisphere ||
             currentContext.season !== context.season ||
-            currentContext.period !== context.period;
+            currentContext.period !== context.period ||
+            currentContext.term !== context.term;
+          if (message.refreshOnly) {
+            if (!allowOnline || !latest.onlineEnabled || changed) return null;
+            return { status, prefetch: backgroundSources(pool || (quote ? [quote] : [])) };
+          }
+          const cachedInitial = message.cacheOnly && message.initial;
+          const repeated = !pool && !cachedInitial && quote &&
+            (quote.id === message.currentId || history.slice(-6).includes(quote.id));
+          if (message.cacheOnly &&
+            (!allowOnline || !quote || !latest.onlineEnabled || changed || repeated)) return null;
           if (
             !quote ||
             !latest.onlineEnabled ||
             changed ||
-            (!pool &&
-              (quote.id === message.currentId ||
-                history.slice(-6).includes(quote.id)))
+            repeated
           ) {
             if (quote && latest.onlineEnabled && !changed) status = "repeat";
             if (!latest.onlineEnabled || message.preferOffline || !allowOnline)
@@ -96,6 +111,9 @@ export function createStateController(
             context: currentContext,
             source,
             status,
+            prefetch: backgroundSources(!changed && latest.onlineEnabled && source !== "offline" ? pool || [] : []).filter((src) =>
+              src !== (quote.media?.type === "video" ? quote.media.posterUrl : quote.media?.url),
+            ),
           };
         });
       }

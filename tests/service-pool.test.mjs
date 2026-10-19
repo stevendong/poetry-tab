@@ -132,6 +132,134 @@ test("A single candidate remains usable instead of falsely reporting an outage",
   assert.equal(calls, 1);
 });
 
+test("Startup selects cached poems with matching backgrounds and reserves history across tabs", async () => {
+  let clock = 1000;
+  let calls = 0;
+  const items = ["one", "two", "three"].map((id) => ({
+    ...quote(id), background: { type: "image", url: `/${id}.webp` },
+  }));
+  const { controller, storage } = fixture({
+    now: () => clock,
+    fetchImpl: async () => { calls++; return response(items); },
+  });
+  await controller.handle({ type: "select" });
+  clock += 61000;
+  const results = await Promise.all([1, 2].map(() =>
+    controller.handle({ type: "select", cacheOnly: true, initial: true }),
+  ));
+  assert.equal(calls, 1, "Startup reads never fetch an expired pool");
+  assert.notEqual(results[0].quoteId, results[1].quoteId);
+  for (const result of results) {
+    assert.equal(result.source, "cached");
+    assert.equal(result.quote.media.url, `https://poetry.example/${result.quote.remoteId}.webp`);
+    assert(!result.prefetch.includes(result.quote.media.url));
+  }
+  assert.deepEqual(storage.data.history.slice(-2), results.map((r) => r.quoteId));
+});
+
+test("Cached startup never waits for an in-flight refresh; refreshing does not change history", async () => {
+  let clock = 1000;
+  let release;
+  let started;
+  const loading = new Promise((resolve) => { started = resolve; });
+  let calls = 0;
+  const { controller, storage } = fixture({
+    now: () => clock,
+    fetchImpl: async () => {
+      if (++calls === 1) return response([quote("one"), quote("two")]);
+      started();
+      return new Promise((resolve) => { release = () => resolve(response([quote("new")])); });
+    },
+  });
+  await controller.handle({ type: "select" });
+  clock += 61000;
+  const refreshing = controller.handle({ type: "select", refreshOnly: true });
+  await loading;
+  let timer;
+  try {
+    const cached = await Promise.race([
+      controller.handle({ type: "select", cacheOnly: true }),
+      new Promise((_, reject) => { timer = setTimeout(() => reject(new Error("Startup waited for network")), 1000); }),
+    ]);
+    assert.equal(cached.source, "cached");
+    const history = [...storage.data.history];
+    release();
+    const refreshed = await refreshing;
+    assert.equal(refreshed.quote, undefined);
+    assert.deepEqual(storage.data.history, history);
+    assert.equal(storage.data.servicePoolState.items[0].remoteId, "new");
+  } finally {
+    clearTimeout(timer);
+    release();
+    await refreshing;
+  }
+});
+
+test("Startup rejects expired, mismatched, disabled and unauthorized caches without fetching or changing history", async () => {
+  let clock = 1000;
+  let allowed = true;
+  let calls = 0;
+  const { controller, storage } = fixture({
+    now: () => clock,
+    hasPermission: async () => allowed,
+    fetchImpl: async () => { calls++; return response([quote("one"), quote("two")]); },
+  });
+  await controller.handle({ type: "select" });
+  const history = [...storage.data.history];
+  for (const override of [
+    { onlineEnabled: false }, { serviceUrl: "https://different.example" },
+    { provider: "custom", customUrl: settings.serviceUrl },
+    { mediaPreference: "video" }, { hemisphere: "south" },
+  ]) {
+    storage.data.settings = { ...settings, ...override };
+    assert.equal(await controller.handle({ type: "select", cacheOnly: true }), null);
+  }
+  storage.data.settings = settings;
+  allowed = false;
+  assert.equal(await controller.handle({ type: "select", cacheOnly: true }), null);
+  allowed = true;
+  clock += 600000;
+  assert.equal(await controller.handle({ type: "select", cacheOnly: true }), null);
+  assert.equal(calls, 1);
+  assert.deepEqual(storage.data.history, history);
+});
+
+test("Candidate preloads include image URLs and video posters, never video streams", async () => {
+  const { controller } = fixture({
+    fetchImpl: async () => response([
+      { ...quote("one"), background: { type: "image", url: "/one.webp" } },
+      { ...quote("two"), background: { type: "video", url: "/two.webm", posterUrl: "/poster.webp" } },
+      { ...quote("three"), background: { type: "image", url: "/three.webp" } },
+    ]),
+  });
+  const selected = await controller.handle({ type: "select" });
+  assert.deepEqual(selected.prefetch, ["https://poetry.example/poster.webp", "https://poetry.example/three.webp"]);
+  const refreshed = await controller.handle({ type: "select", refreshOnly: true });
+  assert.equal(refreshed.prefetch.length, 3);
+  assert(refreshed.prefetch.every((src) => !src.endsWith(".webm")));
+});
+
+test("A custom API startup can reuse its last displayed poem while refreshing the next image", async () => {
+  let calls = 0;
+  const storage = memory({ settings: { ...settings, provider: "custom", customUrl: "https://poetry.example/generic" } });
+  const { controller } = fixture({
+    storage,
+    fetchImpl: async () => new Response(JSON.stringify({
+      ...quote(`custom-${++calls}`), background: { type: "image", url: `/custom-${calls}.webp` },
+    })),
+  });
+  const first = await controller.handle({ type: "select" });
+  const cached = await controller.handle({ type: "select", cacheOnly: true, initial: true });
+  assert.equal(cached.quoteId, first.quoteId);
+  assert.equal(cached.source, "cached");
+  assert.equal(calls, 1);
+  const history = [...storage.data.history];
+  const refresh = await controller.handle({ type: "select", refreshOnly: true, currentId: first.quoteId });
+  assert.deepEqual(refresh.prefetch, ["https://poetry.example/custom-2.webp"]);
+  assert.equal(calls, 2);
+  assert.deepEqual(storage.data.history, history);
+});
+
 test("Pool cache expires and isolates context, service and background preference; old failure cooldown is ignored", async () => {
   let clock = 1000,
     calls = 0;

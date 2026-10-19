@@ -31,10 +31,10 @@ export function createProviderClient(
   });
   const flights = new Map();
   return {
-    async get(context, settings, { currentId, history = [] } = {}) {
-      if (settings.provider === "jinrishici") return jinrishici.get(context);
+    async get(context, settings, { currentId, history = [], cacheOnly = false } = {}) {
+      if (settings.provider === "jinrishici") return jinrishici.get(context, { cacheOnly });
       if (settings.provider === "service")
-        return service.get(context, settings);
+        return service.get(context, settings, { cacheOnly });
       let endpoint;
       try {
         endpoint = endpointFor(settings);
@@ -54,11 +54,18 @@ export function createProviderClient(
         context.term,
       ]);
       const flightKey = configKey + contextKey;
-      if (flights.has(flightKey)) return flights.get(flightKey);
+      if (!cacheOnly && flights.has(flightKey)) return flights.get(flightKey);
       const run = async () => {
         const state = await storage.get("customOnlineState", {});
         const same = state?.configKey === configKey;
         const last = same ? restoreCustom(state.quote) : null;
+        if (cacheOnly)
+          return {
+            status: "cached",
+            quote: last && state.contextKey === contextKey &&
+              now() - state.fetchedAt >= 0 && now() - state.fetchedAt < 600000 ? last : null,
+            cached: true,
+          };
         if (same && state.retryAt > now())
           return {
             status: state.failure || "unavailable",
@@ -136,6 +143,7 @@ export function createProviderClient(
           clearTimeout(timer);
         }
       };
+      if (cacheOnly) return run();
       const flight = run();
       flights.set(flightKey, flight);
       try {

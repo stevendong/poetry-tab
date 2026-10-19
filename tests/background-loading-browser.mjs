@@ -33,7 +33,8 @@ async function pageFor(quotes) {
     window.selectionCount = 0;
     chrome.runtime = {
       id: "background-test",
-      async sendMessage() {
+      async sendMessage(message) {
+        if (message.cacheOnly) return { data: null };
         const selected = quotes[Math.min(window.selectionCount++, quotes.length - 1)];
         return { data: { quote: selected, context, source: "online", status: "online" } };
       },

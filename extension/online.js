@@ -159,12 +159,19 @@ export function createOnlineClient(
 ) {
   let inFlight = null;
   return {
-    async get(context) {
-      if (inFlight) return inFlight;
+    async get(context, { cacheOnly = false } = {}) {
+      if (!cacheOnly && inFlight) return inFlight;
       const run = async () => {
         const state = await storage.get("onlineState", {});
         const key = `${context.season}:${context.period}:${context.hemisphere}`;
         const last = restoreOnline(state?.quote);
+        if (cacheOnly)
+          return {
+            status: "cached",
+            quote: last && state.contextKey === key &&
+              now() - state.fetchedAt >= 0 && now() - state.fetchedAt < 600000 ? last : null,
+            cached: true,
+          };
         if (state?.retryAt > now()) return { status: "unavailable" };
         if (
           last &&
@@ -218,6 +225,7 @@ export function createOnlineClient(
           clearTimeout(timer);
         }
       };
+      if (cacheOnly) return run();
       inFlight = run();
       try {
         return await inFlight;
