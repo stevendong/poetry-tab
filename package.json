@@ -8,7 +8,7 @@
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "test:browser": "node tests/browser.mjs",
-    "test:background": "node tests/background-browser.mjs",
+    "test:background": "node tests/background-browser.mjs && node tests/background-loading-browser.mjs",
     "test:calendar": "node tests/calendar-browser.mjs",
     "test:language": "node tests/language-browser.mjs",
     "check": "node scripts/check.mjs",

@@ -289,13 +289,19 @@ function updateQuoteText() {
   populateReading();
 }
 
-async function displayQuote(quote, fromLibrary = false, selection = {}) {
+function displayQuote(quote, fromLibrary = false, selection = {}) {
   const version = ++renderVersion;
   current = quote;
   currentSelection = selection;
   currentFromLibrary = fromLibrary;
   waitingForOnline = false;
   updateQuoteText();
+  document.body.dataset.quote = quote.id;
+  // Reading and switching poems must not wait for a slow media download.
+  void displayBackground(quote, version);
+}
+
+async function displayBackground(quote, version) {
   const hasArt =
     Boolean(quote.art) && (quote.provider !== "online" || quote.artExact);
   const remoteMedia =
@@ -314,7 +320,6 @@ async function displayQuote(quote, fromLibrary = false, selection = {}) {
     );
   if (!src) {
     resetBackground();
-    document.body.dataset.quote = quote.id;
     return;
   }
   if (
@@ -323,27 +328,36 @@ async function displayQuote(quote, fromLibrary = false, selection = {}) {
     art.classList.contains("loaded") &&
     !art.hidden
   ) {
-    document.body.dataset.quote = quote.id;
     return;
   }
   resetBackground();
   $("background-loading").hidden = false;
+  // Fetch the video alongside its poster, rather than waiting for the poster.
+  if (remoteMedia?.type === "video") startVideo(remoteMedia, version);
   const image = new Image();
   image.referrerPolicy = "no-referrer";
+  image.fetchPriority = "high";
   image.src = src;
   try {
     await image.decode();
     if (version !== renderVersion) return;
     art.src = src;
     revealBackground(art);
-    document.body.dataset.background = "art";
-    document.body.dataset.quote = quote.id;
-    if (remoteMedia?.type === "video") startVideo(remoteMedia, version);
-    else $("background-loading").hidden = true;
+    if (document.body.dataset.background !== "video")
+      document.body.dataset.background = "art";
+    if (
+      remoteMedia?.type !== "video" ||
+      $("background-video").error ||
+      !$("background-video").hidden
+    )
+      $("background-loading").hidden = true;
   } catch {
     if (version !== renderVersion) return;
+    // A missing poster must not cancel a video that can still play.
+    if (remoteMedia?.type === "video" && !$("background-video").error) {
+      return;
+    }
     resetBackground();
-    document.body.dataset.quote = quote.id;
     $("art-caption").textContent = t("defaultBackground");
     $("content-source").title = t("defaultBackground");
     toast(remoteMedia ? "remoteImageError" : "imageError");
@@ -351,6 +365,8 @@ async function displayQuote(quote, fromLibrary = false, selection = {}) {
 }
 
 function revealBackground(element) {
+  // Flush display:none first so a cached image starts a fresh transition.
+  void element.offsetWidth;
   element.hidden = false;
   // Commit the transparent state after display:none, including cached images.
   void element.offsetWidth;
@@ -360,8 +376,8 @@ function revealBackground(element) {
 function startVideo(media, version) {
   const video = $("background-video");
   video.muted = true;
+  video.preload = "auto";
   video.poster = media.posterUrl;
-  video.src = media.url;
   video.onloadeddata = () => {
     if (version !== renderVersion) return;
     revealBackground(video);
@@ -370,7 +386,7 @@ function startVideo(media, version) {
     void video.play().catch(() => {
       if (version !== renderVersion) return;
       video.hidden = true;
-      document.body.dataset.background = "art";
+      document.body.dataset.background = $("art").hidden ? "default" : "art";
     });
   };
   video.onerror = () => {
@@ -378,8 +394,9 @@ function startVideo(media, version) {
     $("background-loading").hidden = true;
     video.hidden = true;
     video.pause();
-    document.body.dataset.background = "art";
+    document.body.dataset.background = $("art").hidden ? "default" : "art";
   };
+  video.src = media.url;
   video.load();
 }
 function resetBackground() {
@@ -441,7 +458,7 @@ async function nextQuote(options = {}) {
       interactionVersion === interactionAtRequest &&
       renderVersion === viewAtRequest
     )
-      await displayQuote(quote, false, result);
+      displayQuote(quote, false, result);
     else if (waitingForOnline) {
       waitingForOnline = false;
       updateQuoteText();
@@ -450,7 +467,7 @@ async function nextQuote(options = {}) {
     console.error("Selection failed:", error.message);
     // Still show context-appropriate content if persistent storage is unavailable.
     context = getContext(new Date(), settings.hemisphere);
-    await displayQuote(
+    displayQuote(
       selectQuote(QUOTES, context, [], Math.random, current?.id),
     );
     toast("storageError");
@@ -545,9 +562,9 @@ function populateLibrary() {
       arrow.textContent = "↗";
       arrow.setAttribute("aria-hidden", "true");
       button.append(text, arrow);
-      button.addEventListener("click", async () => {
+      button.addEventListener("click", () => {
         $("library-dialog").close();
-        await displayQuote(quote, true);
+        displayQuote(quote, true);
       });
       return button;
     }),
@@ -702,7 +719,7 @@ function storageChanged(changes) {
       current?.provider === "custom" &&
       oldSettings.onlineEnabled !== settings.onlineEnabled
     )
-      void displayQuote(current);
+      displayQuote(current);
   }
 }
 if (globalThis.chrome?.storage?.onChanged) {
@@ -744,7 +761,7 @@ async function init() {
   }
   applySettings();
   const rawHistory = await storage.get("history", []).catch(() => []);
-  await displayQuote(
+  displayQuote(
     selectQuote(QUOTES, context, Array.isArray(rawHistory) ? rawHistory : []),
   );
   if (settings.onlineEnabled && globalThis.chrome?.runtime?.id) {

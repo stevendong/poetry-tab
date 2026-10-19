@@ -102,14 +102,14 @@ svg.icon {
   object-fit: cover;
   object-position: center;
   opacity: 0;
-  transition: opacity 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 #art.loaded,
 #background-video.loaded {
   opacity: 1;
 }
 body[data-background="art"] #art.loaded {
-  animation: background-drift 28s ease-in-out 1.2s infinite alternate both;
+  animation: background-drift 28s ease-in-out 0.4s infinite alternate both;
 }
 @keyframes background-drift {
   from {

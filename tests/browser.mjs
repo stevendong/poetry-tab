@@ -292,8 +292,10 @@ try {
       .filter({ hasText: quote.lines.join("，") })
       .click();
     await page.waitForFunction(
-      (id) => document.body.dataset.quote === id,
-      quote.id,
+      ({ id, art }) => document.body.dataset.quote === id &&
+        document.getElementById("art").getAttribute("src") === `assets/art/${art}.webp` &&
+        document.getElementById("art").classList.contains("loaded"),
+      quote,
     );
     assert.equal(
       await page.locator("#verse").innerText(),
