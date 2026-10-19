@@ -8,6 +8,7 @@ import { solarTermOnDate } from "./calendar.js";
 import { initCalendar } from "./calendar-view.js";
 import { createSelect } from "./custom-select.js";
 import { createBackgroundPrefetch } from "./background-prefetch.js";
+import { quotationRequest, validQuotationId } from "./service-client.js";
 import {
   t,
   setLanguage,
@@ -40,6 +41,7 @@ let currentFromLibrary = false;
 let waitingForOnline = false;
 let toastKey;
 let apiStatusKey = "";
+let specifiedStatusKey = "";
 const backgroundPrefetch = createBackgroundPrefetch();
 let prefetchSources = [];
 let backgroundReadyVersion = 0;
@@ -128,6 +130,7 @@ function applySettings() {
   if (current) updateQuoteText();
   if ($("library-dialog").open) populateLibrary();
   if (toastKey && !$("toast").hidden) $("toast").textContent = t(toastKey);
+  if (specifiedStatusKey) $("specified-status").textContent = t(specifiedStatusKey);
   updateClock();
 }
 
@@ -153,6 +156,21 @@ function showApiFields() {
     provider === "service" ? "serviceHelp" : "customHelp",
   );
 }
+
+async function requestApiPermission(endpoint) {
+  if (!globalThis.chrome?.runtime?.id || !chrome.permissions?.request)
+    throw new Error("apiExtensionOnly");
+  let allowed;
+  try {
+    allowed = await chrome.permissions.request({ origins: [originPattern(endpoint)] });
+  } catch (error) {
+    console.warn("API site permission request failed:", error);
+    throw new Error(/Only permissions specified in the manifest/i.test(error.message)
+      ? "apiReloadExtension" : "apiPermissionError");
+  }
+  if (!allowed) throw new Error("apiDenied");
+}
+
 $("api-provider").addEventListener("change", () => {
   $("api-url").value =
     $("api-provider").value === "service"
@@ -176,24 +194,8 @@ $("save-api").addEventListener("click", async () => {
       throw new Error("apiInvalid");
     }
     if (provider !== "jinrishici") {
-      if (!globalThis.chrome?.runtime?.id || !chrome.permissions?.request)
-        throw new Error("apiExtensionOnly");
-      let allowed;
-      try {
-        // Keep the request in the click gesture, before any storage awaits.
-        allowed = await chrome.permissions.request({
-          origins: [originPattern(endpoint)],
-        });
-      } catch (error) {
-        console.warn("API site permission request failed:", error);
-        // Updating unpacked files does not reload Chrome's manifest.
-        throw new Error(
-          /Only permissions specified in the manifest/i.test(error.message)
-            ? "apiReloadExtension"
-            : "apiPermissionError",
-        );
-      }
-      if (!allowed) throw new Error("apiDenied");
+      // Request access in the click gesture, before any storage awaits.
+      await requestApiPermission(endpoint);
     }
     await settingsWrites.catch(() => {});
     const savedSettings = sanitizeSettings({ ...settings, ...config });
@@ -216,6 +218,72 @@ $("save-api").addEventListener("click", async () => {
     );
   } finally {
     $("save-api").disabled = false;
+  }
+});
+
+function setSpecifiedStatus(key) {
+  specifiedStatusKey = key;
+  $("specified-status").textContent = t(key);
+}
+
+$("specified-load").addEventListener("click", async () => {
+  const id = $("specified-id").value.trim();
+  if (!validQuotationId(id)) {
+    setSpecifiedStatus("specifiedInvalidId");
+    return;
+  }
+  if (!settings.onlineEnabled) {
+    setSpecifiedStatus("specifiedNeedsOnline");
+    return;
+  }
+  const interaction = ++interactionVersion;
+  const version = renderVersion;
+  pendingSelection = false;
+  backgroundPrefetch.stop();
+  $("specified-load").disabled = true;
+  setSpecifiedStatus("specifiedLoading");
+  try {
+    let endpoint;
+    try {
+      endpoint = quotationRequest(settings, id);
+    } catch {
+      throw new Error("apiInvalid");
+    }
+    await requestApiPermission(endpoint);
+    await settingsWrites.catch(() => {});
+    const result = await request({ type: "load", id });
+    if (interaction !== interactionVersion || version !== renderVersion) {
+      setSpecifiedStatus("specifiedChanged");
+      return;
+    }
+    if (!result.quote) {
+      setSpecifiedStatus({
+        invalid_id: "specifiedInvalidId", invalid_url: "apiInvalid",
+        disabled: "specifiedNeedsOnline", permission: "specifiedPermission",
+        not_found: "specifiedNotFound", rate_limited: "apiRateLimited",
+        changed: "specifiedChanged",
+      }[result.status] || "specifiedUnavailable");
+      return;
+    }
+    context = result.context;
+    displayQuote(result.quote, false, result);
+    setSpecifiedStatus("specifiedLoaded");
+    $("settings-dialog").close();
+  } catch (error) {
+    setSpecifiedStatus({
+      apiDenied: "specifiedPermission", apiPermissionError: "specifiedPermission",
+      apiExtensionOnly: "specifiedExtensionOnly", apiReloadExtension: "apiReloadExtension",
+      apiInvalid: "apiInvalid",
+    }[error.message] || "specifiedUnavailable");
+  } finally {
+    $("specified-load").disabled = false;
+    warmBackgrounds();
+  }
+});
+$("specified-id").addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    $("specified-load").click();
   }
 });
 
@@ -256,7 +324,9 @@ function updateQuoteText() {
   );
   if (quote.provider === "custom" && !waitingForOnline)
     $("content-source").textContent = t(
-      selection.status === "rate_limited"
+      selection.source === "specified"
+        ? "specifiedSource"
+        : selection.status === "rate_limited"
         ? "customRateLimitedSource"
         : selection.status === "unavailable" && selection.source === "cached"
           ? "customUnavailableCachedSource"
@@ -526,6 +596,7 @@ async function nextQuote(options = {}) {
       updateQuoteText();
     }
   } catch (error) {
+    if (interactionVersion !== interactionAtRequest || renderVersion !== viewAtRequest) return;
     console.error("Selection failed:", error.message);
     // Still show context-appropriate content if persistent storage is unavailable.
     context = getContext(new Date(), settings.hemisphere);

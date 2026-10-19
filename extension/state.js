@@ -29,6 +29,22 @@ export function createStateController(
   };
   return {
     async handle(message) {
+      if (message.type === "load") {
+        const settings = sanitizeSettings(await storage.get("settings", {}));
+        if (!allowOnline || !settings.onlineEnabled) return { status: "disabled" };
+        const result = await onlineClient.load(message.id, settings);
+        if (!result.quote) return result;
+        return serialized(async () => {
+          const latest = sanitizeSettings(await storage.get("settings", {}));
+          if (!latest.onlineEnabled) return { status: "disabled" };
+          if (latest.serviceUrl !== settings.serviceUrl || latest.mediaPreference !== settings.mediaPreference)
+            return { status: "changed" };
+          const raw = await storage.get("history", []);
+          const history = Array.isArray(raw) ? raw.filter((id) => typeof id === "string") : [];
+          await storage.set("history", [...history, result.quote.id].slice(-24));
+          return { ...result, context: getContext(date(), latest.hemisphere), source: "specified", prefetch: [] };
+        });
+      }
       if (message.type === "select") {
         const settings = sanitizeSettings(await storage.get("settings", {}));
         const context = getContext(date(), settings.hemisphere);

@@ -445,6 +445,14 @@
             role="status"
             aria-live="polite"
           ></p>
+          <label class="api-url-label" for="specified-id" data-i18n="specifiedId">指定诗句 ID</label>
+          <p id="specified-help" class="privacy-note" data-i18n="specifiedHint">从已保存的诗画库接口加载已公开诗句，不改变默认诗词来源。</p>
+          <div class="specified-row">
+            <input id="specified-id" type="text" maxlength="100" spellcheck="false"
+              autocomplete="off" aria-describedby="specified-help specified-status" />
+            <button id="specified-load" type="button" data-i18n="specifiedLoad">加载诗句</button>
+          </div>
+          <p id="specified-status" class="privacy-note" role="status" aria-live="polite"></p>
         </div>
         <label class="setting-row" for="hemisphere"
           ><span

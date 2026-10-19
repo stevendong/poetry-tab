@@ -31,6 +31,7 @@ export function createProviderClient(
   });
   const flights = new Map();
   return {
+    load: (id, settings) => service.load(id, settings),
     async get(context, settings, { currentId, history = [], cacheOnly = false } = {}) {
       if (settings.provider === "jinrishici") return jinrishici.get(context, { cacheOnly });
       if (settings.provider === "service")

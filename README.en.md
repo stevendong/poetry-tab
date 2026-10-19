@@ -12,6 +12,7 @@ Yijian is a Chrome new tab extension that brings classical Chinese poetry, prose
 
 - **Poems for the moment:** Poetry Service provides online recommendations by default. You can also choose Jinrishici or a custom API. When online recommendations are disabled or unavailable, the extension selects from 17 built-in poems and illustrations using the season and time of day.
 - **Dedicated illustrations:** Poems with matching artwork display it. Other poems use a default gradient background.
+- **Load by ID:** Enter a Poetry Service quotation ID in Settings to display its published poem, original text, commentary and background. Favorites work normally, and your default source stays unchanged.
 - **Faster backgrounds:** New tabs first use cached candidates from the last 10 minutes that match the current context and source settings. The candidate pool refreshes in the background without replacing the displayed poem. Once the current background is visible, other Poetry Service images and video posters preload one at a time at low priority using the browser's image cache. Preloading stops when online recommendations are disabled and is skipped in data-saving mode.
 - **Read further:** Open the original text, explanation or translation, commentary, and source. Missing online translations are clearly indicated.
 - **Local favorites:** Saved poems remain readable offline. Favorites and preferences sync between tabs in the same browser profile.
@@ -61,6 +62,8 @@ In the calendar, use the arrow keys to select dates, `PageUp` / `PageDown` to ch
 
 Change Settings → Poem font to update poems on the main page, reading panel, and favorites instantly. All options use installed system fonts; no font files are bundled or downloaded. Kai is the default, with a system serif fallback when Kai is unavailable.
 
+With online recommendations enabled, enter the recommendation record's `id` under Settings → Specific quotation ID, then click Load poem or press Enter. The extension reads `/api/v1/quotations/{id}` from the saved Poetry Service API, bypassing seasonal selection and recent-history exclusions. Missing, unpublished or unavailable records leave the current poem unchanged. Next poem and new tabs resume your saved recommendation settings. Use the quotation record's `id`, rather than `workId` or `publicationId`.
+
 The header shows a solar term only on its date. Dates and the clock follow your local time zone. Solar term dates are approximate. Offline seasons begin at the traditional solar terms for spring, summer, autumn, and winter, and reverse in the Southern Hemisphere.
 
 ## Data and privacy
@@ -93,6 +96,7 @@ The preview listens on `http://127.0.0.1:4173/` by default. Set `PORT` to choose
 | `npm run test:online`   | Test online recommendations, caching, fallback, and saved online poems     |
 | `npm run test:background` | Test background loading, preloading, cached startup, and cancellation |
 | `npm run test:api-settings` | Test stale manifest guidance, authorization failures, and API settings |
+| `npm run test:specified` | Test loading by ID, failure handling, favorites, and late responses |
 | `npm run test:calendar` | Test calendar interaction, keyboard controls, and narrow layouts           |
 | `npm run test:language` | Test Chinese script and English switching, persistence, tab sync, and layouts |
 | `npm run pack`          | Create the extension ZIP, unpacked directory, and SHA-256 checksum         |

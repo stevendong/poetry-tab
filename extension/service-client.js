@@ -15,6 +15,27 @@ export function candidatesRequest(settings, context) {
   return url.href;
 }
 
+export function validQuotationId(id) {
+  return typeof id === "string" && /^[a-zA-Z0-9_-]{1,100}$/.test(id);
+}
+
+export function quotationRequest(settings, id) {
+  if (!validQuotationId(id)) throw new Error("Invalid quotation ID");
+  const url = new URL(endpointFor({ ...settings, provider: "service" }));
+  url.pathname = url.pathname.replace(/\/recommendation$/, `/quotations/${id}`);
+  for (const key of ["season", "period", "term", "prefer", "exclude", "limit"])
+    url.searchParams.delete(key);
+  return url.href;
+}
+
+function normalizeServiceQuote(quote, settings) {
+  const preferred = Array.isArray(quote.media) && quote.media.find((media) =>
+    media.active !== false && media.type === (settings.mediaPreference || "image") &&
+    (media.type === "image" || media.posterUrl),
+  );
+  return normalizeCustom({ quote: { ...quote, background: preferred || quote.background } }, settings);
+}
+
 export function selectServiceQuote(
   items,
   history,
@@ -40,6 +61,35 @@ export function createServiceClient(
 ) {
   const flights = new Map();
   return {
+    async load(id, settings) {
+      if (!validQuotationId(id)) return { status: "invalid_id" };
+      const config = { ...settings, provider: "service" };
+      let url;
+      try {
+        url = quotationRequest(config, id);
+      } catch {
+        return { status: "invalid_url" };
+      }
+      if (!(await hasPermission(url))) return { status: "permission" };
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeout);
+      try {
+        const response = await fetchImpl(url, {
+          signal: controller.signal, credentials: "omit", cache: "no-store",
+          redirect: "error", referrerPolicy: "no-referrer",
+        });
+        const data = await readJson(response);
+        const quote = data?.quote ?? data?.data ?? data;
+        if (quote?.id !== id) return { status: "invalid_response" };
+        if (quote.status !== "published" || quote.ready !== true) return { status: "not_found" };
+        return { status: "loaded", quote: normalizeServiceQuote(quote, config) };
+      } catch (error) {
+        return { status: error.status === 404 ? "not_found" :
+          error.status === 429 ? "rate_limited" : "unavailable" };
+      } finally {
+        clearTimeout(timer);
+      }
+    },
     async get(context, settings, { cacheOnly = false } = {}) {
       let endpoint;
       try {
@@ -104,20 +154,7 @@ export function createServiceClient(
           const data = await readJson(response, 1048576);
           if (!Array.isArray(data?.items))
             throw new Error("Invalid candidates");
-          const quotes = data.items.slice(0, 10).map((q) => {
-            const preferred =
-              Array.isArray(q.media) &&
-              q.media.find(
-                (m) =>
-                  m.active !== false &&
-                  m.type === (settings.mediaPreference || "image") &&
-                  (m.type === "image" || m.posterUrl),
-              );
-            return normalizeCustom(
-              { quote: { ...q, background: preferred || q.background } },
-              settings,
-            );
-          });
+          const quotes = data.items.slice(0, 10).map((quote) => normalizeServiceQuote(quote, settings));
           await storage.set("servicePoolState", {
             key,
             items: quotes,

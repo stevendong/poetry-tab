@@ -1125,7 +1125,8 @@ input[type="range"] {
   margin: 16px 0 8px;
   font-size: 13px;
 }
-#api-url {
+#api-url,
+#specified-id {
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
@@ -1139,7 +1140,8 @@ input[type="range"] {
 #api-provider {
   max-width: 55%;
 }
-#save-api {
+#save-api,
+#specified-load {
   padding: 9px 14px;
   margin-top: 12px;
   background: #455848;
@@ -1148,11 +1150,27 @@ input[type="range"] {
   border-radius: 7px;
   cursor: pointer;
 }
-#save-api:disabled {
+#save-api:disabled,
+#specified-load:disabled {
   opacity: 0.6;
   cursor: wait;
 }
 #api-status {
+  overflow-wrap: anywhere;
+}
+.specified-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#specified-id {
+  flex: 1;
+}
+#specified-load {
+  margin-top: 0;
+  flex-shrink: 0;
+}
+#specified-status {
   overflow-wrap: anywhere;
 }
 
