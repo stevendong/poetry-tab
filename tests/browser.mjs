@@ -84,7 +84,7 @@ try {
   );
   pass("Initial quote matches browser time and season");
   assert.equal(await page.getAttribute("body", "data-poem-font"), "brush");
-  await page.evaluate(() => document.fonts.load('48px "Ma Shan Zheng"'));
+  await page.evaluate(() => document.fonts.ready);
   const fontSession = await browser.newCDPSession(page);
   await fontSession.send("DOM.enable");
   await fontSession.send("CSS.enable");
@@ -93,12 +93,22 @@ try {
     nodeId: documentNode.nodeId,
     selector: "#verse span",
   });
-  const { fonts } = await fontSession.send("CSS.getPlatformFontsForNode", { nodeId });
-  assert.ok(fonts.some((font) =>
-    font.isCustomFont && /Ma.?Shan.?Zheng/i.test(font.familyName) && font.glyphCount > 0,
-  ));
+  const firstLine = page.locator("#verse span").first();
+  const originalLine = await firstLine.textContent();
+  for (const text of [originalLine, "新丰绿树起黄埃，数骑渔阳探使回。", "新豐綠樹起黃埃，數騎漁陽探使回。"]) {
+    await firstLine.evaluate((element, text) => {
+      element.textContent = text;
+      void element.offsetWidth;
+    }, text);
+    const { fonts } = await fontSession.send("CSS.getPlatformFontsForNode", { nodeId });
+    assert.ok(fonts.length > 0 && fonts.every((font) => !font.isCustomFont && font.glyphCount > 0),
+      `Poems render using system fonts: ${JSON.stringify(fonts)}`);
+  }
+  await firstLine.evaluate((element, text) => { element.textContent = text; }, originalLine);
+  assert.ok(requests.every((url) => !/\.(?:woff2?|ttf|otf)(?:[?#]|$)/i.test(url)),
+    "Rendering poems never requests a font file");
   await fontSession.detach();
-  pass("Default poem renders with the actual bundled Ma Shan Zheng brush font");
+  pass("Default and screenshot poems render in system fonts without font downloads");
   await mkdir(root + "artifacts", { recursive: true });
   await page.screenshot({ path: root + "artifacts/newtab-desktop.png" });
   await page.locator("#read-button").click();
@@ -152,7 +162,7 @@ try {
   const quoteBeforeFontChange = await page.getAttribute("body", "data-quote");
   for (const [font, family] of [
     ["serif", "Songti SC"],
-    ["brush", "Ma Shan Zheng"],
+    ["brush", "Kaiti SC"],
     ["sans", "system-ui"],
   ]) {
     await page.locator("#poem-font").selectOption(font);
@@ -237,8 +247,8 @@ try {
     document.body.dataset.poemFont === "brush",
   )));
   await tabs[0].keyboard.press("Escape");
-  await page.evaluate(() => document.fonts.load('48px "Ma Shan Zheng"'));
-  pass("Font preference syncs between open tabs and brush font remains available offline");
+  await page.evaluate(() => document.fonts.ready);
+  pass("Font preference syncs between open tabs and local Kai remains available offline");
   await worker.evaluate(async () =>
     chrome.storage.local.set({ favorites: [] }),
   );

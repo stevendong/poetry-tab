@@ -145,7 +145,7 @@ test("specific seasonal and solar-term matches get higher weight", () => {
   );
 });
 
-test("poem fonts default to brush calligraphy and accept only built-in choices", () => {
+test("poem fonts default to local Kai and accept only supported choices", () => {
   assert.equal(DEFAULT_SETTINGS.poemFont, "brush");
   assert.equal(sanitizeSettings({ showClock: false }).poemFont, "brush");
   for (const poemFont of ["brush", "serif", "sans"])

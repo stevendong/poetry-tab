@@ -37,15 +37,6 @@ for (const name of (await readdir(root)).filter((file) =>
     await access(root + dependency);
   }
 }
-const brushFont = JSON.parse(
-  await readFile(root + "assets/fonts/MaShanZheng.provenance.json", "utf8"),
-);
-const brushBytes = await readFile(root + "assets/fonts/" + brushFont.file);
-assert.equal(
-  createHash("sha256").update(brushBytes).digest("hex"),
-  brushFont.sha256,
-);
-await access(root + "assets/fonts/" + brushFont.licenseFile);
 const prompts = JSON.parse(
   await readFile(root + "assets/art/prompts.json", "utf8"),
 );

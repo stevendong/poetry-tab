@@ -16,7 +16,7 @@ Yijian is a Chrome new tab extension that brings classical Chinese poetry, prose
 - **Local favorites:** Saved poems remain readable offline. Favorites and preferences sync between tabs in the same browser profile.
 - **Calendar:** Click the date to browse Gregorian and Chinese lunar dates, zodiac years, and solar terms from 1900 to 2100.
 - **Simplified Chinese, Traditional Chinese, and English UI:** Choose a language in Settings or follow the browser. Chinese options also switch the script of poems, commentary, favorites, and the calendar. Conversion works entirely offline; preferences save automatically and update open tabs.
-- **Reading preferences:** Choose your hemisphere, clock visibility, explanation display, poem font, text size, and background shade. Font choices include brush calligraphy (default), serif, and the system font; preferences save automatically and sync across open tabs.
+- **Reading preferences:** Choose your hemisphere, clock visibility, explanation display, poem font, text size, and background shade. Font choices include Kai (default), serif, and the system font; preferences save automatically and sync across open tabs.
 
 <details>
 <summary>Calendar preview (Chinese interface)</summary>
@@ -58,7 +58,7 @@ If saving an API reports that extension permissions need updating, follow the sa
 
 In the calendar, use the arrow keys to select dates, `PageUp` / `PageDown` to change months, and `Home` / `End` to move to the first or last day of the week.
 
-Change Settings → Poem font to update poems on the main page, reading panel, and favorites instantly. A local Ma Shan Zheng WOFF2 subset covers the display lines, authors and titles of the bundled poems. Other characters fall back to local Kai or serif fonts. Serif and sans-serif options use system fonts.
+Change Settings → Poem font to update poems on the main page, reading panel, and favorites instantly. All options use installed system fonts; no font files are bundled or downloaded. Kai is the default, with a system serif fallback when Kai is unavailable.
 
 The header shows a solar term only on its date. Dates and the clock follow your local time zone. Solar term dates are approximate. Offline seasons begin at the traditional solar terms for spring, summer, autumn, and winter, and reverse in the Southern Hemisphere.
 
@@ -68,7 +68,7 @@ The header shows a solar term only on its date. Dates and the clock follow your 
 - Online recommendations use Poetry Service at `https://poetry-api.nabulalogic.com` by default. It receives your IP, season, time of day, solar term (Northern Hemisphere), background preference, and recent poem IDs. Poetry Service and custom requests send no cookies or Jinrishici identifiers. If you choose Jinrishici, its anonymous client identifier and recommendation cache are stored locally.
 - Turning online recommendations off uses the built-in collection and stops new poem API requests.
 - Favorites and settings use `chrome.storage.local`; the web preview uses `localStorage`. They do not sync to other browsers through an account.
-- Built-in fonts and artwork are bundled. The calendar and saved text work offline; custom images and videos require a connection. No account or location permission is required.
+- Built-in artwork is bundled, and fonts come from your system. The calendar and saved text work offline; custom images and videos require a connection. No account or location permission is required.
 
 ## Development
 
@@ -128,7 +128,7 @@ Output goes to `dist/`: `poetry-tab/` is the loadable extension directory, `poet
 
 The ZIP must stay below 1,000,000 bytes or packaging fails. All 17 offline illustrations remain bundled at 640px wide; online images and videos load from their original service URLs. Asset and original-file records are maintained on the [Notion project page](https://www.notion.so/3f92dbec685c81fa87bbf6bf606e2844).
 
-The archive includes the project's MIT license, both fonts' OFL licenses, and the MIT / Apache-2.0 licenses for OpenCC code and dictionaries.
+The archive includes the project's MIT license and the MIT / Apache-2.0 licenses for OpenCC code and dictionaries.
 
 ### Project structure
 
@@ -142,7 +142,7 @@ extension/             Extension pages, worker, and local assets
   chinese.js           Local Chinese script conversion for displayed poems
   vendor/opencc/       OpenCC code, dictionaries, and licenses
   _locales/            Localized Chrome extension name and description
-  assets/              Illustrations, fonts, and icons
+  assets/              Illustrations and icons
 scripts/               Preview, validation, and packaging
 tests/                 Unit and browser tests
 docs/images/           README screenshots
@@ -156,7 +156,7 @@ Run `npm test` and `npm run check` before submitting a change. For interface or 
 
 ## Sources and license
 
-The project uses the [MIT License](LICENSE). Third-party fonts, texts, and online service content retain their own licenses and terms.
+The project uses the [MIT License](LICENSE). Third-party texts and online service content retain their own licenses and terms.
 
 | Content                               | Source                                                                                                                                                               |
 | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -166,8 +166,7 @@ The project uses the [MIT License](LICENSE). Third-party fonts, texts, and onlin
 | Default online poems, media and commentary | Poetry Service recommendations at `https://poetry-api.nabulalogic.com` |
 | Chinese script conversion             | [OpenCC JavaScript](https://github.com/nk2028/opencc-js) 1.4.2, bundled locally; see [provenance and licenses](extension/vendor/opencc/README.md) |
 | Illustrations                         | AI-assisted artwork; prompts and generation records are in [`prompts.json`](extension/assets/art/prompts.json)                                                       |
-| Serif and sans-serif fonts             | Installed system fonts; no additional font files are distributed |
-| Default brush calligraphy             | Bundled Ma Shan Zheng WOFF2 subset under [OFL 1.1](extension/assets/fonts/MaShanZheng-OFL.txt); see [provenance](extension/assets/fonts/MaShanZheng.provenance.json) |
+| Kai, serif, and sans-serif fonts       | Installed system fonts; no additional font files are distributed |
 | English solar term names              | Based on the [Hong Kong Observatory calendar](https://www.hko.gov.hk/en/gts/time/24solarterms.htm)                                                                   |
 
 ## Custom poetry APIs (v0.3.0)
