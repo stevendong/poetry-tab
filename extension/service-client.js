@@ -1,5 +1,6 @@
 import {
   endpointFor,
+  httpUrl,
   customRequest,
   normalizeCustom,
   restoreCustom,
@@ -29,11 +30,22 @@ export function quotationRequest(settings, id) {
 }
 
 function normalizeServiceQuote(quote, settings) {
-  const preferred = Array.isArray(quote.media) && quote.media.find((media) =>
-    media.active !== false && media.type === (settings.mediaPreference || "image") &&
+  const endpoint = endpointFor(settings);
+  const available = (Array.isArray(quote.media) ? quote.media : []).filter((media) =>
+    media && media.active !== false && httpUrl(media.url, endpoint),
+  );
+  const image = [quote.background, ...available].find((media) =>
+    media?.active !== false && media?.type === "image" && httpUrl(media.url, endpoint),
+  );
+  // Some published videos have no poster; the same quotation's image is a fallback.
+  const withPoster = (media) => media?.type === "video"
+    ? { ...media, posterUrl: httpUrl(media.posterUrl, endpoint) || image?.url }
+    : media;
+  const preferred = available.map(withPoster).find((media) =>
+    media.type === (settings.mediaPreference || "image") &&
     (media.type === "image" || media.posterUrl),
   );
-  return normalizeCustom({ quote: { ...quote, background: preferred || quote.background } }, settings);
+  return normalizeCustom({ quote: { ...quote, background: preferred || withPoster(quote.background) } }, settings);
 }
 
 export function selectServiceQuote(

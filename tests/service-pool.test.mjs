@@ -382,7 +382,7 @@ test("An empty successful refresh clears old content, whereas transient failures
   }
 });
 
-test("Permission checks precede saved pools and media selection honors preference without borrowing a poster", async () => {
+test("Permission checks precede saved pools and media selection preserves the video's own poster", async () => {
   let allowed = true;
   const item = {
     ...quote("one"),
@@ -415,6 +415,22 @@ test("Permission checks precede saved pools and media selection honors preferenc
       .status,
     "permission",
   );
+});
+
+test("Candidate videos can use their own quotation image when posterUrl is null", async () => {
+  const { client } = fixture({
+    fetchImpl: async () => response(["one", "two"].map((id) => ({
+      ...quote(id),
+      background: { type: "image", url: `/${id}.webp` },
+      media: [{ type: "video", url: `/${id}.mp4`, posterUrl: null }],
+    }))),
+  });
+  const result = await client.get(context, { ...settings, mediaPreference: "video" });
+  for (const quote of result.quotes) {
+    assert.equal(quote.media.type, "video");
+    assert.equal(quote.media.url, `https://poetry.example/${quote.remoteId}.mp4`);
+    assert.equal(quote.media.posterUrl, `https://poetry.example/${quote.remoteId}.webp`);
+  }
 });
 
 test("Generic custom APIs also retain 429 status and accept bounded numeric or date Retry-After", async () => {

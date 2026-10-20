@@ -88,6 +88,38 @@ test("Explicit loads honor video preference and require the exact published quot
   }
 });
 
+test("Videos without a valid poster use an image from the same quotation and survive favorites", async () => {
+  for (const posterUrl of [null, "", "javascript:invalid"]) {
+    for (const background of [quote().background, null]) {
+      const record = quote();
+      record.background = background;
+      record.media[1].posterUrl = posterUrl;
+      const { controller, storage } = fixture({ fetchImpl: async () => response(record) });
+      storage.data.settings.mediaPreference = "video";
+      const result = await controller.handle({ type: "load", id: "specific-id" });
+      assert.equal(result.quote.media.type, "video");
+      assert.equal(result.quote.media.url, "https://poetry.example/specific.webm");
+      assert.equal(result.quote.media.posterUrl, "https://poetry.example/specific.webp");
+      const saved = await controller.handle({ type: "favorite", id: result.quote.id, quote: result.quote });
+      assert.deepEqual(resolveFavorite(result.quote.id, saved.favoriteSnapshots).media, result.quote.media);
+    }
+  }
+});
+
+test("Poster fallback skips inactive or invalid images and does not accept a video without any usable poster", async () => {
+  for (const image of [
+    { type: "image", url: "/inactive.webp", active: false },
+    { type: "image", url: "javascript:invalid" },
+  ]) {
+    const record = { ...quote(), background: null, media: [image, { type: "video", url: "/movie.mp4", posterUrl: null }] };
+    const { controller, storage } = fixture({ fetchImpl: async () => response(record) });
+    storage.data.settings.mediaPreference = "video";
+    const result = await controller.handle({ type: "load", id: "specific-id" });
+    assert.equal(result.status, "loaded");
+    assert.equal(result.quote.media, null);
+  }
+});
+
 test("Invalid IDs, denied permission and offline mode perform no requests", async () => {
   let calls = 0;
   const { controller, storage } = fixture({

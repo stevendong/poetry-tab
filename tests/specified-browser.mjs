@@ -45,6 +45,9 @@ try {
         fullText: "洛阳城里见秋风，欲作家书意万重。复恐匆匆说不尽，行人临发又开封。",
         meaning: "秋风吹起，想念家乡。", appreciation: "以秋风引出乡思。",
         background: { type: "image", url: "https://poetry-media.nabulalogic.com/test/specified.webp" },
+        media: id === "video-no-poster" ? [
+          { type: "video", url: "https://poetry-media.nabulalogic.com/test/specified.webm", posterUrl: null },
+        ] : [],
       }));
       if (id === "slow") return new Promise((resolve) => { globalThis.__releaseSpecified = () => resolve(response()); });
       return response();
@@ -149,6 +152,45 @@ try {
   assert.notEqual(await page.locator("body").getAttribute("data-quote"), another);
   assert.equal(await worker.evaluate(async () => (await chrome.storage.local.get("settings")).settings.provider), "jinrishici");
   console.log("PASS Late manual responses preserve active reading; Next poem resumes the saved recommendation source");
+
+  const video = Buffer.from(await page.evaluate(async () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 64;
+    const stream = canvas.captureStream(10);
+    const recorder = new MediaRecorder(stream, { mimeType: "video/webm;codecs=vp8" });
+    const chunks = [];
+    recorder.ondataavailable = (event) => chunks.push(event.data);
+    const stopped = new Promise((resolve) => { recorder.onstop = resolve; });
+    recorder.start();
+    const drawing = setInterval(() => canvas.getContext("2d").fillRect(0, 0, 64, 64), 50);
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    clearInterval(drawing);
+    recorder.stop();
+    await stopped;
+    stream.getTracks().forEach((track) => track.stop());
+    return [...new Uint8Array(await new Blob(chunks).arrayBuffer())];
+  }));
+  await page.route("**/test/specified.webm", (route) => route.fulfill({ contentType: "video/webm", body: video }));
+  await worker.evaluate(async () => {
+    const { settings } = await chrome.storage.local.get("settings");
+    await chrome.storage.local.set({ settings: { ...settings, mediaPreference: "video" } });
+  });
+  await page.waitForFunction(() => document.getElementById("media-preference").value === "video");
+  await load(page, "video-no-poster");
+  const playingVideo = () => {
+    const video = document.getElementById("background-video");
+    return document.body.dataset.background === "video" && !video.paused && video.currentTime > 0;
+  };
+  await page.waitForFunction(playingVideo);
+  assert.equal(await page.locator("#background-video").getAttribute("poster"), "https://poetry-media.nabulalogic.com/test/specified.webp");
+  await page.locator("#favorite-button").click();
+  await page.waitForFunction(() => document.getElementById("favorite-button").getAttribute("aria-pressed") === "true");
+  await page.locator("#next-button").click();
+  await page.waitForFunction(() => document.getElementById("poetry").getAttribute("aria-busy") === "false");
+  await page.locator("#library-button").click();
+  await page.locator("#library-list .saved-quote").first().click();
+  await page.waitForFunction(playingVideo);
+  console.log("PASS A video with a null poster plays using its quotation image, including when reopened from favorites");
   assert.deepEqual(errors, []);
 } finally {
   await browser?.close();
