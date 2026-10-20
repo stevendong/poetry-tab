@@ -4,6 +4,7 @@ import { getContext, selectQuote } from "./context.js";
 import { storage, sanitizeSettings, DEFAULT_SETTINGS } from "./storage.js";
 import { createStateController } from "./state.js";
 import { resolveFavorite } from "./online.js";
+import { formatVerse } from "./verse.js";
 import { solarTermOnDate } from "./calendar.js";
 import { initCalendar } from "./calendar-view.js";
 import { createSelect } from "./custom-select.js";
@@ -368,7 +369,7 @@ function updateQuoteText() {
       (quote.meaning.length > 120 ? "…" : "")
     : t("missingMeaning");
   $("inline-meaning").lang = quote.meaning ? chineseLocale() : locale();
-  document.title = `${chineseText(quote.lines.join("，"))} · ${t("brand")}`;
+  document.title = `${chineseText(formatVerse(quote))} · ${t("brand")}`;
   updateFavorite();
   populateReading();
 }
@@ -621,7 +622,7 @@ function populateReading() {
   $("reading-byline").textContent = chineseText(
     `${current.dynasty} · ${current.author} · ${current.kind}`,
   );
-  $("reading-verse").textContent = chineseText(current.lines.join("，") + "。");
+  $("reading-verse").textContent = chineseText(formatVerse(current, true));
   $("meaning-heading").textContent = t(
     current.meaningHeading === "作品译文" ? "translation" : "meaning",
   );
@@ -687,7 +688,7 @@ function populateLibrary() {
       const text = document.createElement("span");
       text.lang = chineseLocale();
       const strong = document.createElement("strong");
-      strong.textContent = chineseText(quote.lines.join("，"));
+      strong.textContent = chineseText(formatVerse(quote));
       const small = document.createElement("small");
       small.textContent = chineseText(`${quote.author} · ${quote.title}`);
       text.append(strong, small);

@@ -1,3 +1,5 @@
+import { joinVerse } from "./verse.js";
+
 export const SERVICE_URL = "https://poetry-api.nabulalogic.com";
 const clean = (v, max = 200) =>
   typeof v === "string" ? v.trim().slice(0, max) : "";
@@ -72,7 +74,7 @@ export function normalizeCustom(payload, settings) {
         .split(/[，。！？；\n]+/u)
         .filter(Boolean)
         .slice(0, 4);
-  const content = lines.join("，"),
+  const content = joinVerse(lines),
     title = clean(q.title),
     author = clean(q.author);
   const fullText =
