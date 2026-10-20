@@ -11,5 +11,11 @@ export function toTraditional(text) {
 
 export function toSimplified(text) {
   simplified ||= Converter({ from: "tw", to: "cn" });
-  return simplified(text);
+  return simplified(text).replace(/[\u{10000}-\u{10FFFF}]/gu, (character) => {
+    if (text.includes(character)) return character;
+    // Keep the source form when conversion introduces an extension character
+    // (e.g. 巘 → 𪩘) missing from installed Kai/Song fonts.
+    const original = toTraditional(character);
+    return original.length === 1 && text.includes(original) ? original : character;
+  });
 }

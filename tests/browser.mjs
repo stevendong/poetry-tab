@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { QUOTES } from "../extension/quotes.js";
 import { scoreQuote } from "../extension/context.js";
 import { createPreviewServer } from "../scripts/preview.mjs";
+import { toSimplified, toTraditional } from "../extension/chinese.js";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const extension = process.env.EXTENSION_PATH || root + "extension";
@@ -95,7 +96,9 @@ try {
   });
   const firstLine = page.locator("#verse span").first();
   const originalLine = await firstLine.textContent();
-  for (const text of [originalLine, "新丰绿树起黄埃，数骑渔阳探使回。", "新豐綠樹起黃埃，數騎漁陽探使回。"]) {
+  const screenshotLine = "重湖疊巘清嘉，";
+  const consistentLines = [toSimplified(screenshotLine), toTraditional(screenshotLine)];
+  for (const text of [originalLine, "新丰绿树起黄埃，数骑渔阳探使回。", "新豐綠樹起黃埃，數騎漁陽探使回。", ...consistentLines]) {
     await firstLine.evaluate((element, text) => {
       element.textContent = text;
       void element.offsetWidth;
@@ -103,12 +106,14 @@ try {
     const { fonts } = await fontSession.send("CSS.getPlatformFontsForNode", { nodeId });
     assert.ok(fonts.length > 0 && fonts.every((font) => !font.isCustomFont && font.glyphCount > 0),
       `Poems render using system fonts: ${JSON.stringify(fonts)}`);
+    if (consistentLines.includes(text))
+      assert.equal(fonts.length, 1, `The screenshot line uses one font: ${JSON.stringify(fonts)}`);
   }
   await firstLine.evaluate((element, text) => { element.textContent = text; }, originalLine);
   assert.ok(requests.every((url) => !/\.(?:woff2?|ttf|otf)(?:[?#]|$)/i.test(url)),
     "Rendering poems never requests a font file");
   await fontSession.detach();
-  pass("Default and screenshot poems render in system fonts without font downloads");
+  pass("Default and screenshot poems render in system fonts; rare source glyphs stay in the same font without downloads");
   await mkdir(root + "artifacts", { recursive: true });
   await page.screenshot({ path: root + "artifacts/newtab-desktop.png" });
   await page.locator("#read-button").click();

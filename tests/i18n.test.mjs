@@ -124,6 +124,22 @@ test("Traditional Chinese covers messages, poems, phrase ambiguity and lunar lab
   }
 });
 
+test("Display conversion keeps source glyphs instead of introducing rare extension forms", () => {
+  try {
+    for (const language of ["zh", "en"]) {
+      setLanguage(language);
+      assert.equal(chineseText("重湖疊巘清嘉，"), "重湖叠巘清嘉，");
+      assert.equal(chineseText("趙孟頫的書畫"), "赵孟頫的书画");
+      assert.equal(chineseText("𠮷𪩘𠀀🌙 · 2026\n"), "𠮷𪩘𠀀🌙 · 2026\n");
+    }
+    setLanguage("zh-TW");
+    assert.equal(chineseText("重湖叠巘清嘉，"), "重湖疊巘清嘉，");
+    assert.equal(chineseText("赵孟頫的书画"), "趙孟頫的書畫");
+  } finally {
+    setLanguage("zh");
+  }
+});
+
 test("Chrome extension metadata is translated in all supported locales", async () => {
   const manifest = JSON.parse(
     await readFile(new URL("../extension/manifest.json", import.meta.url)),
