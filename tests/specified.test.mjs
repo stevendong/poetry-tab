@@ -76,7 +76,7 @@ test("Explicit loads honor video preference and require the exact published quot
   storage.data.settings.mediaPreference = "video";
   const result = await controller.handle({ type: "load", id: "specific-id" });
   assert.equal(result.quote.media.type, "video");
-  assert.equal(result.quote.media.posterUrl, "https://poetry.example/poster.webp");
+  assert.equal(result.quote.media.posterUrl, "https://poetry.example/specific.webp");
   for (const [record, status] of [
     [quote("different-id"), "invalid_response"],
     [{ ...quote(), status: "draft" }, "not_found"],
@@ -88,8 +88,8 @@ test("Explicit loads honor video preference and require the exact published quot
   }
 });
 
-test("Videos without a valid poster use an image from the same quotation and survive favorites", async () => {
-  for (const posterUrl of [null, "", "javascript:invalid"]) {
+test("Videos prefer the returned quotation image over their poster and survive favorites", async () => {
+  for (const posterUrl of [null, "", "javascript:invalid", "/different-poster.webp"]) {
     for (const background of [quote().background, null]) {
       const record = quote();
       record.background = background;
@@ -106,17 +106,22 @@ test("Videos without a valid poster use an image from the same quotation and sur
   }
 });
 
-test("Poster fallback skips inactive or invalid images and does not accept a video without any usable poster", async () => {
+test("Videos fall back to their own poster when returned images are unusable", async () => {
   for (const image of [
     { type: "image", url: "/inactive.webp", active: false },
     { type: "image", url: "javascript:invalid" },
   ]) {
-    const record = { ...quote(), background: null, media: [image, { type: "video", url: "/movie.mp4", posterUrl: null }] };
-    const { controller, storage } = fixture({ fetchImpl: async () => response(record) });
-    storage.data.settings.mediaPreference = "video";
-    const result = await controller.handle({ type: "load", id: "specific-id" });
-    assert.equal(result.status, "loaded");
-    assert.equal(result.quote.media, null);
+    for (const posterUrl of [null, "/poster.webp"]) {
+      const record = { ...quote(), background: null, media: [image, { type: "video", url: "/movie.mp4", posterUrl }] };
+      const { controller, storage } = fixture({ fetchImpl: async () => response(record) });
+      storage.data.settings.mediaPreference = "video";
+      const result = await controller.handle({ type: "load", id: "specific-id" });
+      assert.equal(result.status, "loaded");
+      if (posterUrl) {
+        assert.equal(result.quote.media.type, "video");
+        assert.equal(result.quote.media.posterUrl, "https://poetry.example/poster.webp");
+      } else assert.equal(result.quote.media, null);
+    }
   }
 });
 

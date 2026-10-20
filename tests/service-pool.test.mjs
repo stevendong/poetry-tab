@@ -382,7 +382,7 @@ test("An empty successful refresh clears old content, whereas transient failures
   }
 });
 
-test("Permission checks precede saved pools and media selection preserves the video's own poster", async () => {
+test("Permission checks precede saved pools and videos use the returned background image as poster", async () => {
   let allowed = true;
   const item = {
     ...quote("one"),
@@ -407,7 +407,7 @@ test("Permission checks precede saved pools and media selection preserves the vi
   assert.equal(video.quotes[0].media.type, "video");
   assert.equal(
     video.quotes[0].media.posterUrl,
-    "https://poetry.example/poster.webp",
+    "https://poetry.example/art.webp",
   );
   allowed = false;
   assert.equal(

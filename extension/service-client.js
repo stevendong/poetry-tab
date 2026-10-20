@@ -37,9 +37,9 @@ function normalizeServiceQuote(quote, settings) {
   const image = [quote.background, ...available].find((media) =>
     media?.active !== false && media?.type === "image" && httpUrl(media.url, endpoint),
   );
-  // Some published videos have no poster; the same quotation's image is a fallback.
+  // Use the quotation's returned image as the video poster whenever available.
   const withPoster = (media) => media?.type === "video"
-    ? { ...media, posterUrl: httpUrl(media.posterUrl, endpoint) || image?.url }
+    ? { ...media, posterUrl: image?.url || httpUrl(media.posterUrl, endpoint) }
     : media;
   const preferred = available.map(withPoster).find((media) =>
     media.type === (settings.mediaPreference || "image") &&
