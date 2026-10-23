@@ -82,6 +82,15 @@ async function frames(page) {
   await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 }
 
+async function savedDisplay(page, remoteId) {
+  await page.waitForFunction(async (remoteId) => {
+    const { readLastDisplay, displayConfigKey } = await import("/display-cache.js");
+    const { storage, sanitizeSettings } = await import("/storage.js");
+    const saved = await readLastDisplay(displayConfigKey(sanitizeSettings(await storage.get("settings", {}))));
+    return saved?.quote.remoteId === remoteId && saved.imageData?.startsWith("data:image/");
+  }, remoteId);
+}
+
 try {
   browser = await chromium.launch({
     ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {}),
@@ -115,6 +124,7 @@ try {
   await ready(page);
   assert.equal(await page.locator("#art").getAttribute("src"), `${base}/media/two.webp`);
   assert.equal(imageRequests().length, 4, "Switching to a preloaded background uses HTTP cache");
+  await savedDisplay(page, "two");
   console.log("PASS Candidates preload after the foreground image; switching uses HTTP cache without another download");
 
   await page.evaluate(() => {
@@ -131,13 +141,13 @@ try {
   });
   await cachedPage.goto(base, { waitUntil: "domcontentloaded" });
   await ready(cachedPage);
-  assert.equal(await cachedPage.locator("#art").getAttribute("src"), `${base}/media/three.webp`);
+  assert.match(await cachedPage.locator("#art").getAttribute("src"), /^data:image\//);
+  assert.equal(await cachedPage.locator("body").getAttribute("data-quote"),
+    await page.locator("body").getAttribute("data-quote"), "Startup restores the last successful poem");
   assert.deepEqual(localArtwork, [], "Warm startup should not flash an unrelated offline illustration");
   assert.equal(imageRequests().length, 4, "New tabs reuse the same cached background files");
   assert.match(await cachedPage.locator("#content-source").innerText(), /最近推荐/);
   await cachedPage.waitForFunction(() => document.body.dataset.quote?.startsWith("custom:"));
-  const cachedId = await cachedPage.locator("body").getAttribute("data-quote");
-  const history = await cachedPage.evaluate(() => localStorage.getItem("yijian:history"));
   apiGate.release();
   apiGate = null;
   await cachedPage.waitForFunction(() => {
@@ -145,13 +155,11 @@ try {
     return pool.items[0].remoteId === "new";
   });
   await cachedPage.waitForFunction(() => performance.getEntriesByType("resource").some((entry) => entry.name.endsWith("/media/new.webp")));
-  assert.equal(await cachedPage.locator("body").getAttribute("data-quote"), cachedId);
-  assert.equal(await cachedPage.evaluate(() => localStorage.getItem("yijian:history")), history);
-  await cachedPage.locator("#next-button").click();
-  await ready(cachedPage);
+  await cachedPage.waitForFunction(() => document.getElementById("art").getAttribute("src")?.endsWith("/media/new.webp"));
+  await savedDisplay(cachedPage, "new");
   assert.equal(await cachedPage.locator("#art").getAttribute("src"), `${base}/media/new.webp`);
   assert.equal(imageRequests().length, 5);
-  console.log("PASS New tabs show cached poems/backgrounds before API completion; refresh updates candidates without replacing the current poem");
+  console.log("PASS New tabs restore the last poem and image, then replace them after the new background loads");
   await context.close();
 
   requests.length = 0;

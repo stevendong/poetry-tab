@@ -55,6 +55,7 @@ export function createStateController(
               currentId: message.currentId,
               history: await storage.get("history", []),
               cacheOnly: message.cacheOnly === true,
+              refresh: message.replaceCached === true,
             });
           } catch {
             result = { status: "unavailable" };
@@ -87,7 +88,16 @@ export function createStateController(
             currentContext.term !== context.term;
           if (message.refreshOnly) {
             if (!allowOnline || !latest.onlineEnabled || changed) return null;
-            return { status, prefetch: backgroundSources(pool || (quote ? [quote] : [])) };
+            const replacement = message.replaceCached && ["online", "cached"].includes(status) && quote;
+            if (replacement)
+              await storage.set("history", [...history, quote.id].slice(-24));
+            return {
+              status,
+              prefetch: backgroundSources(pool || (quote ? [quote] : [])),
+              ...(replacement
+                ? { quote, context: currentContext, source }
+                : {}),
+            };
           }
           const cachedInitial = message.cacheOnly && message.initial;
           const repeated = !pool && !cachedInitial && quote &&

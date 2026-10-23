@@ -32,10 +32,10 @@ export function createProviderClient(
   const flights = new Map();
   return {
     load: (id, settings) => service.load(id, settings),
-    async get(context, settings, { currentId, history = [], cacheOnly = false } = {}) {
-      if (settings.provider === "jinrishici") return jinrishici.get(context, { cacheOnly });
+    async get(context, settings, { currentId, history = [], cacheOnly = false, refresh = false } = {}) {
+      if (settings.provider === "jinrishici") return jinrishici.get(context, { cacheOnly, refresh });
       if (settings.provider === "service")
-        return service.get(context, settings, { cacheOnly });
+        return service.get(context, settings, { cacheOnly, refresh });
       let endpoint;
       try {
         endpoint = endpointFor(settings);
@@ -77,7 +77,7 @@ export function createProviderClient(
           currentId,
         ].filter(Boolean);
         if (
-          last &&
+          !refresh && last &&
           !recent.includes(last.id) &&
           state.contextKey === contextKey &&
           now() - state.fetchedAt >= 0 &&

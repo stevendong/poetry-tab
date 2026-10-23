@@ -159,7 +159,7 @@ export function createOnlineClient(
 ) {
   let inFlight = null;
   return {
-    async get(context, { cacheOnly = false } = {}) {
+    async get(context, { cacheOnly = false, refresh = false } = {}) {
       if (!cacheOnly && inFlight) return inFlight;
       const run = async () => {
         const state = await storage.get("onlineState", {});
@@ -174,7 +174,7 @@ export function createOnlineClient(
           };
         if (state?.retryAt > now()) return { status: "unavailable" };
         if (
-          last &&
+          !refresh && last &&
           state.contextKey === key &&
           now() - state.fetchedAt >= 0 &&
           now() - state.fetchedAt < minInterval

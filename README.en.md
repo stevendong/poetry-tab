@@ -13,7 +13,7 @@ Yijian is a Chrome new tab extension that brings classical Chinese poetry, prose
 - **Poems for the moment:** Poetry Service provides online recommendations by default. You can also choose Jinrishici or a custom API. When online recommendations are disabled or unavailable, the extension selects from 17 built-in poems and illustrations using the season and time of day.
 - **Dedicated illustrations:** Poems with matching artwork display it. Other poems use a default gradient background.
 - **Load by ID:** Enter a Poetry Service quotation ID in Settings to display its published poem, original text, commentary and background. Favorites work normally, and your default source stays unchanged.
-- **Faster backgrounds:** New tabs first use cached candidates from the last 10 minutes that match the current context and source settings. The candidate pool refreshes in the background without replacing the displayed poem. Once the current background is visible, other Poetry Service images and video posters preload one at a time at low priority using the browser's image cache. Preloading stops when online recommendations are disabled and is skipped in data-saving mode.
+- **Cached startup:** New tabs first restore the last successfully displayed poem and image. A new poem and its image replace them together once loaded; failures leave the cached display in place. Caches respect source and background settings. Once the current background is visible, other Poetry Service images and video posters preload one at a time at low priority. Preloading stops when online recommendations are disabled and is skipped in data-saving mode.
 - **Read further:** Open the original text, explanation or translation, commentary, and source. Missing online translations are clearly indicated.
 - **Local favorites:** Saved poems remain readable offline. Favorites and preferences sync between tabs in the same browser profile.
 - **Calendar:** Click the date to browse Gregorian and Chinese lunar dates, zodiac years, and solar terms from 1900 to 2100.
@@ -72,7 +72,7 @@ The header shows a solar term only on its date. Dates and the clock follow your 
 - Online recommendations use Poetry Service at `https://poetry-api.nabulalogic.com` by default. It receives your IP, season, time of day, solar term (Northern Hemisphere), background preference, and recent poem IDs. Poetry Service and custom requests send no cookies or Jinrishici identifiers. If you choose Jinrishici, its anonymous client identifier and recommendation cache are stored locally.
 - Turning online recommendations off uses the built-in collection and stops new poem API requests.
 - Favorites and settings use `chrome.storage.local`; the web preview uses `localStorage`. They do not sync to other browsers through an account.
-- Built-in artwork is bundled, and fonts come from your system. The calendar and saved text work offline; custom images and videos require a connection. No account or location permission is required.
+- Built-in artwork is bundled, and fonts come from your system. The calendar and saved text work offline. The last successful poem and image are stored locally in IndexedDB so the cached image can be restored offline. If an image host blocks cross-origin reads, only its URL is saved and the browser's image cache is used; videos still require a connection. No account or location permission is required.
 
 ## Development
 

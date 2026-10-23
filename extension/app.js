@@ -9,6 +9,7 @@ import { solarTermOnDate } from "./calendar.js";
 import { initCalendar } from "./calendar-view.js";
 import { createSelect } from "./custom-select.js";
 import { createBackgroundPrefetch } from "./background-prefetch.js";
+import { backgroundSource, displayConfigKey, readLastDisplay, saveLastDisplay } from "./display-cache.js";
 import { quotationRequest, validQuotationId } from "./service-client.js";
 import {
   t,
@@ -94,10 +95,7 @@ function updateClock() {
 }
 
 function applySettings() {
-  const nextMediaKey = JSON.stringify([
-    settings.onlineEnabled, settings.provider, settings.serviceUrl,
-    settings.customUrl, settings.mediaPreference, settings.hemisphere,
-  ]);
+  const nextMediaKey = displayConfigKey(settings);
   if (nextMediaKey !== mediaConfigKey) {
     backgroundPrefetch.stop();
     prefetchSources = [];
@@ -379,28 +377,29 @@ function displayQuote(quote, fromLibrary = false, selection = {}) {
   backgroundPrefetch.stop();
   prefetchSources = Array.isArray(selection.prefetch) ? selection.prefetch : [];
   current = quote;
-  currentSelection = selection;
+  currentSelection = { source: selection.source, status: selection.status };
   currentFromLibrary = fromLibrary;
   waitingForOnline = false;
   updateQuoteText();
   document.body.dataset.quote = quote.id;
   // Reading and switching poems must not wait for a slow media download.
-  void displayBackground(quote, version);
+  void displayBackground(quote, version, selection);
 }
 
-async function displayBackground(quote, version) {
-  const hasArt =
-    Boolean(quote.art) && (quote.provider !== "online" || quote.artExact);
+function rememberDisplay(quote, version, selection, src, configKey) {
+  if (selection.persist === false) return;
+  void saveLastDisplay({ configKey, quote, src, savedAt: Date.now(), onlineEnabled: settings.onlineEnabled,
+    imageData: selection.imageData },
+    () => version === renderVersion && configKey === mediaConfigKey,
+  ).catch(() => {});
+}
+
+async function displayBackground(quote, version, selection) {
+  const configKey = mediaConfigKey;
   const remoteMedia =
     quote.provider === "custom" && settings.onlineEnabled ? quote.media : null;
   const art = $("art");
-  const src = remoteMedia
-    ? remoteMedia.type === "video"
-      ? remoteMedia.posterUrl
-      : remoteMedia.url
-    : hasArt
-      ? `assets/art/${quote.art}.webp`
-      : null;
+  const src = backgroundSource(quote, settings.onlineEnabled);
   if (remoteMedia)
     $("content-source").title = t(
       remoteMedia.type === "video" ? "remoteVideoHint" : "remoteImageHint",
@@ -408,6 +407,7 @@ async function displayBackground(quote, version) {
   if (!src) {
     resetBackground();
     backgroundReady(version);
+    rememberDisplay(quote, version, selection, src, configKey);
     return;
   }
   if (
@@ -417,20 +417,22 @@ async function displayBackground(quote, version) {
     !art.hidden
   ) {
     backgroundReady(version);
+    rememberDisplay(quote, version, selection, src, configKey);
     return;
   }
-  resetBackground();
+  resetBackground(Boolean(selection.preparedImage));
   $("background-loading").hidden = false;
   // Fetch the video alongside its poster, rather than waiting for the poster.
-  if (remoteMedia?.type === "video") startVideo(remoteMedia, version);
-  const image = new Image();
+  if (remoteMedia?.type === "video")
+    startVideo({ ...remoteMedia, posterUrl: selection.imageData || remoteMedia.posterUrl }, version);
+  const image = selection.preparedImage || new Image();
   image.referrerPolicy = "no-referrer";
   image.fetchPriority = "high";
-  image.src = src;
+  if (!selection.preparedImage) image.src = selection.imageData || src;
   try {
     await image.decode();
-    if (version !== renderVersion) return;
-    art.src = src;
+    if (version !== renderVersion || configKey !== mediaConfigKey) return;
+    art.src = selection.imageData || src;
     revealBackground(art);
     if (document.body.dataset.background !== "video")
       document.body.dataset.background = "art";
@@ -442,8 +444,9 @@ async function displayBackground(quote, version) {
       $("background-loading").hidden = true;
       backgroundReady(version);
     }
+    rememberDisplay(quote, version, selection, src, configKey);
   } catch {
-    if (version !== renderVersion) return;
+    if (version !== renderVersion || configKey !== mediaConfigKey) return;
     // A missing poster must not cancel a video that can still play.
     if (remoteMedia?.type === "video" && !$("background-video").error) {
       return;
@@ -506,7 +509,7 @@ function startVideo(media, version) {
   video.src = media.url;
   video.load();
 }
-function resetBackground() {
+function resetBackground(keepArt = false) {
   backgroundPrefetch.stop();
   backgroundReadyVersion = 0;
   $("background-loading").hidden = true;
@@ -519,29 +522,48 @@ function resetBackground() {
   video.removeAttribute("src");
   video.removeAttribute("poster");
   video.load();
-  $("art").hidden = true;
-  $("art").removeAttribute("src");
-  $("art").classList.remove("loaded");
-  document.body.dataset.background = "default";
+  if (!keepArt) {
+    $("art").hidden = true;
+    $("art").removeAttribute("src");
+    $("art").classList.remove("loaded");
+  }
+  document.body.dataset.background = $("art").hidden ? "default" : "art";
 }
 
-async function refreshCandidates() {
+async function prepareBackground(quote) {
+  const src = backgroundSource(quote, settings.onlineEnabled);
+  if (!src) return null;
+  const image = new Image();
+  image.referrerPolicy = "no-referrer";
+  image.fetchPriority = "high";
+  image.src = src;
+  await image.decode();
+  return image;
+}
+
+async function refreshDisplay() {
   const version = renderVersion;
   const interaction = interactionVersion;
   const config = mediaConfigKey;
   try {
-    const result = await request({ type: "select", refreshOnly: true, currentId: current?.id });
+    const result = await request({ type: "select", refreshOnly: true, replaceCached: true, currentId: current?.id });
     if (!result || version !== renderVersion || interaction !== interactionVersion ||
       config !== mediaConfigKey || !settings.onlineEnabled) return;
-    if (["empty", "permission"].includes(result.status)) {
-      await nextQuote();
+    if (result.quote) {
+      const preparedImage = await prepareBackground(result.quote);
+      if (version !== renderVersion || interaction !== interactionVersion ||
+        config !== mediaConfigKey || !settings.onlineEnabled) return;
+      context = result.context;
+      displayQuote(result.quote, false, { ...result, preparedImage });
+      setApiStatus("apiSuccess");
       return;
     }
-    // Refresh the pool without replacing a poem already being read.
     currentSelection = { ...currentSelection, status: result.status };
     updateQuoteText();
-    setApiStatus(result.status === "unavailable" ? "apiCachedUnavailable" :
-      result.status === "rate_limited" ? "apiRateLimited" : "apiSuccess");
+    setApiStatus({
+      unavailable: "apiCachedUnavailable", rate_limited: "apiRateLimited",
+      empty: "apiEmpty", permission: "apiPermission",
+    }[result.status] || "apiSuccess");
     prefetchSources = Array.isArray(result.prefetch) ? result.prefetch : [];
     warmBackgrounds();
   } catch {
@@ -555,6 +577,7 @@ async function nextQuote(options = {}) {
     return;
   }
   const initial = options.initial === true;
+  if (!initial) interactionVersion++;
   const interactionAtRequest = interactionVersion;
   const viewAtRequest = renderVersion;
   busy = true;
@@ -587,17 +610,19 @@ async function nextQuote(options = {}) {
     context = result.context;
     const quote = result.quote || QUOTES.find((q) => q.id === result.quoteId);
     if (!quote) throw new Error("Unknown quote");
+    const preparedImage = options.keepCached ? await prepareBackground(quote) : null;
     if (
       interactionVersion === interactionAtRequest &&
       renderVersion === viewAtRequest
     )
-      displayQuote(quote, false, result);
+      displayQuote(quote, false, { ...result, preparedImage });
     else if (waitingForOnline) {
       waitingForOnline = false;
       updateQuoteText();
     }
   } catch (error) {
     if (interactionVersion !== interactionAtRequest || renderVersion !== viewAtRequest) return;
+    if (options.keepCached) return;
     console.error("Selection failed:", error.message);
     // Still show context-appropriate content if persistent storage is unavailable.
     context = getContext(new Date(), settings.hemisphere);
@@ -895,20 +920,27 @@ async function init() {
   }
   applySettings();
   const startupConfig = mediaConfigKey;
-  const [rawHistory, cached] = await Promise.all([
+  const [rawHistory, lastDisplay] = await Promise.all([
     storage.get("history", []).catch(() => []),
-    settings.onlineEnabled && globalThis.chrome?.runtime?.id
-      ? request({ type: "select", cacheOnly: true, initial: true }).catch(() => null)
-      : null,
+    readLastDisplay(startupConfig).catch(() => null),
   ]);
-  if (cached?.quote && startupConfig === mediaConfigKey) {
-    context = cached.context;
-    displayQuote(cached.quote, false, cached);
+  const cached = lastDisplay
+    ? { quote: lastDisplay.quote, context, source: "cached", status: "cached",
+        imageData: lastDisplay.imageData, persist: false }
+    : settings.onlineEnabled && globalThis.chrome?.runtime?.id
+      ? request({ type: "select", cacheOnly: true, initial: true }).catch(() => null)
+      : null;
+  const initial = await cached;
+  if (initial?.quote && startupConfig === mediaConfigKey) {
+    context = initial.context;
+    displayQuote(initial.quote, false, initial);
     $("next-button").disabled = false;
     $("poetry").setAttribute("aria-busy", "false");
-    void refreshCandidates();
+    if (settings.onlineEnabled && globalThis.chrome?.runtime?.id)
+      void refreshDisplay();
+    else void nextQuote({ initial: true, keepCached: true });
   } else {
-    displayQuote(selectQuote(QUOTES, context, Array.isArray(rawHistory) ? rawHistory : []));
+    displayQuote(selectQuote(QUOTES, context, Array.isArray(rawHistory) ? rawHistory : []), false, { persist: false });
     if (settings.onlineEnabled && globalThis.chrome?.runtime?.id) {
       waitingForOnline = true;
       updateQuoteText();

@@ -102,7 +102,7 @@ export function createServiceClient(
         clearTimeout(timer);
       }
     },
-    async get(context, settings, { cacheOnly = false } = {}) {
+    async get(context, settings, { cacheOnly = false, refresh = false } = {}) {
       let endpoint;
       try {
         endpoint = endpointFor(settings);
@@ -148,7 +148,7 @@ export function createServiceClient(
             cached: stale.length > 0,
             retryAt: state.retryAt,
           };
-        if (items.length && age >= 0 && age < 60000)
+        if (!refresh && items.length && age >= 0 && age < 60000)
           return { status: "cached", quotes: items, cached: true };
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), timeout);
