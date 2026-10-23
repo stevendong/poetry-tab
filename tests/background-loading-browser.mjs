@@ -34,6 +34,7 @@ async function pageFor(quotes) {
     chrome.runtime = {
       id: "background-test",
       async sendMessage(message) {
+        if (message.type === "displayed" || message.prepareNext) return { data: {} };
         if (message.cacheOnly) return { data: null };
         const selected = quotes[Math.min(window.selectionCount++, quotes.length - 1)];
         return { data: { quote: selected, context, source: "online", status: "online" } };
@@ -57,7 +58,9 @@ try {
 
   const page = await pageFor([quote("online-first", { type: "image", url: `${base}/online.webp` })]);
   const fallback = gate();
+  const localArtwork = [];
   await page.route("**/assets/art/*.webp", async (route) => {
+    localArtwork.push(route.request().url());
     await fallback.promise;
     await route.continue();
   });
@@ -69,10 +72,10 @@ try {
   assert.equal(await page.locator("#art").getAttribute("src"), `${base}/online.webp`);
   assert.equal(await page.locator("#next-button").isEnabled(), true);
   fallback.release();
-  await page.waitForFunction(() => performance.getEntriesByType("resource").some((entry) => entry.name.includes("/assets/art/")));
   await flushFrames(page);
+  assert.deepEqual(localArtwork, [], "Cold startup must not display an unrelated local poem before the selected online poem");
   assert.equal(await page.locator("#art").getAttribute("src"), `${base}/online.webp`);
-  console.log("PASS Online selection starts before local artwork finishes; late artwork cannot replace it");
+  console.log("PASS Cold startup displays the selected online poem without flashing unrelated local artwork");
   await page.close();
 
   const switching = await pageFor([

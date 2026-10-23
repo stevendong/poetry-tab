@@ -4,6 +4,7 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { createPreviewServer } from "../scripts/preview.mjs";
 import { QUOTES } from "../extension/quotes.js";
+import { customId } from "../extension/custom.js";
 
 const preview = createPreviewServer().listeners("request")[0];
 const image = await readFile(new URL("../extension/assets/art/autumn-maple.webp", import.meta.url));
@@ -82,13 +83,13 @@ async function frames(page) {
   await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 }
 
-async function savedDisplay(page, remoteId) {
-  await page.waitForFunction(async (remoteId) => {
+async function savedDisplay(page, remoteId, key = "last") {
+  await page.waitForFunction(async ({ remoteId, key }) => {
     const { readLastDisplay, displayConfigKey } = await import("/display-cache.js");
     const { storage, sanitizeSettings } = await import("/storage.js");
-    const saved = await readLastDisplay(displayConfigKey(sanitizeSettings(await storage.get("settings", {}))));
+    const saved = await readLastDisplay(displayConfigKey(sanitizeSettings(await storage.get("settings", {}))), key);
     return saved?.quote.remoteId === remoteId && saved.imageData?.startsWith("data:image/");
-  }, remoteId);
+  }, { remoteId, key });
 }
 
 try {
@@ -125,6 +126,7 @@ try {
   assert.equal(await page.locator("#art").getAttribute("src"), `${base}/media/two.webp`);
   assert.equal(imageRequests().length, 4, "Switching to a preloaded background uses HTTP cache");
   await savedDisplay(page, "two");
+  await savedDisplay(page, "three", "next");
   console.log("PASS Candidates preload after the foreground image; switching uses HTTP cache without another download");
 
   await page.evaluate(() => {
@@ -143,7 +145,7 @@ try {
   await ready(cachedPage);
   assert.match(await cachedPage.locator("#art").getAttribute("src"), /^data:image\//);
   assert.equal(await cachedPage.locator("body").getAttribute("data-quote"),
-    await page.locator("body").getAttribute("data-quote"), "Startup restores the last successful poem");
+    customId(`${base}/api/v1/recommendation`, "three"), "Startup uses the prepared next poem");
   assert.deepEqual(localArtwork, [], "Warm startup should not flash an unrelated offline illustration");
   assert.equal(imageRequests().length, 4, "New tabs reuse the same cached background files");
   assert.match(await cachedPage.locator("#content-source").innerText(), /最近推荐/);
@@ -155,11 +157,16 @@ try {
     return pool.items[0].remoteId === "new";
   });
   await cachedPage.waitForFunction(() => performance.getEntriesByType("resource").some((entry) => entry.name.endsWith("/media/new.webp")));
-  await cachedPage.waitForFunction(() => document.getElementById("art").getAttribute("src")?.endsWith("/media/new.webp"));
-  await savedDisplay(cachedPage, "new");
-  assert.equal(await cachedPage.locator("#art").getAttribute("src"), `${base}/media/new.webp`);
+  await savedDisplay(cachedPage, "new", "next");
+  assert.equal(await cachedPage.locator("body").getAttribute("data-quote"), customId(`${base}/api/v1/recommendation`, "three"));
+  assert.match(await cachedPage.locator("#art").getAttribute("src"), /^data:image\//);
   assert.equal(imageRequests().length, 5);
-  console.log("PASS New tabs restore the last poem and image, then replace them after the new background loads");
+  const following = await context.newPage();
+  await following.goto(base, { waitUntil: "domcontentloaded" });
+  await ready(following);
+  assert.equal(await following.locator("body").getAttribute("data-quote"), customId(`${base}/api/v1/recommendation`, "new"));
+  assert.match(await following.locator("#art").getAttribute("src"), /^data:image\//);
+  console.log("PASS Each new tab uses the prepared next poem and image; replenishment leaves the current tab unchanged");
   await context.close();
 
   requests.length = 0;
@@ -188,9 +195,10 @@ try {
   const meteredPage = await meteredContext.newPage();
   await meteredPage.goto(base, { waitUntil: "domcontentloaded" });
   await ready(meteredPage);
+  await savedDisplay(meteredPage, "two", "next");
   await frames(meteredPage);
-  assert.deepEqual(imageRequests().map((record) => record.path), ["/media/one.webp"]);
-  console.log("PASS Data-saving mode loads only the selected background");
+  assert.deepEqual(imageRequests().map((record) => record.path), ["/media/one.webp", "/media/two.webp"]);
+  console.log("PASS Data-saving mode prepares one next poem and skips additional speculative images");
   await meteredContext.close();
   assert.deepEqual(errors, []);
 } finally {

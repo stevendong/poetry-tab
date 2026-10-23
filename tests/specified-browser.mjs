@@ -112,7 +112,7 @@ try {
   await page.evaluate(() => {
     globalThis.__originalSend = chrome.runtime.sendMessage;
     chrome.runtime.sendMessage = async (message) => {
-      if (message.type === "select" && !message.cacheOnly && !message.refreshOnly)
+      if (message.type === "select" && !message.cacheOnly && !message.refreshOnly && !message.prepareNext)
         return new Promise((resolve) => { globalThis.__releaseAuto = () => resolve({ error: "late automatic failure" }); });
       return globalThis.__originalSend(message);
     };

@@ -29,6 +29,18 @@ export function createStateController(
   };
   return {
     async handle(message) {
+      if (message.type === "displayed") {
+        return serialized(async () => {
+          const quote = QUOTES.find((quote) => quote.id === message.quote?.id) ||
+            restoreCustom(message.quote) || restoreOnline(message.quote);
+          if (!quote) throw new Error("Unknown quote");
+          const raw = await storage.get("history", []);
+          const history = Array.isArray(raw) ? raw.filter((id) => typeof id === "string") : [];
+          if (history.at(-1) !== quote.id)
+            await storage.set("history", [...history, quote.id].slice(-24));
+          return { status: "recorded" };
+        });
+      }
       if (message.type === "load") {
         const settings = sanitizeSettings(await storage.get("settings", {}));
         if (!allowOnline || !settings.onlineEnabled) return { status: "disabled" };
@@ -55,8 +67,15 @@ export function createStateController(
               currentId: message.currentId,
               history: await storage.get("history", []),
               cacheOnly: message.cacheOnly === true,
-              refresh: message.replaceCached === true,
+              refresh: message.prepareNext === true && settings.provider !== "service",
             });
+            if (message.prepareNext && result.status === "cached" &&
+              result.quotes?.every((quote) => quote.id === message.currentId))
+              result = await onlineClient.get(context, settings, {
+                currentId: message.currentId,
+                history: await storage.get("history", []),
+                refresh: true,
+              });
           } catch {
             result = { status: "unavailable" };
           }
@@ -88,15 +107,23 @@ export function createStateController(
             currentContext.term !== context.term;
           if (message.refreshOnly) {
             if (!allowOnline || !latest.onlineEnabled || changed) return null;
-            const replacement = message.replaceCached && ["online", "cached"].includes(status) && quote;
-            if (replacement)
-              await storage.set("history", [...history, quote.id].slice(-24));
             return {
               status,
               prefetch: backgroundSources(pool || (quote ? [quote] : [])),
-              ...(replacement
-                ? { quote, context: currentContext, source }
-                : {}),
+            };
+          }
+          if (message.prepareNext) {
+            if (changed) return null;
+            if (!allowOnline || !latest.onlineEnabled) {
+              quote = selectQuote(QUOTES, currentContext, history, random, message.currentId);
+              source = "offline";
+              status = "disabled";
+            } else if (!["online", "cached"].includes(status)) return null;
+            if (!quote || quote.id === message.currentId) return null;
+            return {
+              quote, context: currentContext, source, status,
+              prefetch: backgroundSources(pool || []).filter((src) =>
+                src !== (quote.media?.type === "video" ? quote.media.posterUrl : quote.media?.url)),
             };
           }
           const cachedInitial = message.cacheOnly && message.initial;

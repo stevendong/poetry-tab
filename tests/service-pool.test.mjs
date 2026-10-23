@@ -224,23 +224,42 @@ test("Startup rejects expired, mismatched, disabled and unauthorized caches with
   assert.deepEqual(storage.data.history, history);
 });
 
-test("Display refresh fetches new candidates even when the pool is recent and records the replacement", async () => {
+test("Preparing the next poem reuses the second candidate without recording it as displayed", async () => {
+  let calls = 0;
+  const { controller, storage } = fixture({
+    fetchImpl: async () => { calls++; return response([quote("one"), quote("two"), quote("three")]); },
+  });
+  const first = await controller.handle({ type: "select" });
+  const history = [...storage.data.history];
+  const next = await controller.handle({ type: "select", prepareNext: true, currentId: first.quoteId });
+  assert.equal(calls, 1);
+  assert.equal(next.quote.remoteId, "two");
+  assert.deepEqual(storage.data.history, history);
+  await controller.handle({ type: "displayed", quote: next.quote });
+  await controller.handle({ type: "displayed", quote: next.quote });
+  assert.deepEqual(storage.data.history, [...history, next.quote.id]);
+  const third = await controller.handle({ type: "select", prepareNext: true, currentId: next.quote.id });
+  assert.equal(third.quote.remoteId, "three");
+  assert.equal(calls, 1);
+});
+
+test("Preparing the next poem refreshes a pool that only contains the current poem", async () => {
   let calls = 0;
   const { controller, storage } = fixture({
     fetchImpl: async () => response([quote(`poem-${++calls}`)]),
   });
   const first = await controller.handle({ type: "select" });
   const refreshed = await controller.handle({
-    type: "select", refreshOnly: true, replaceCached: true, currentId: first.quoteId,
+    type: "select", prepareNext: true, currentId: first.quoteId,
   });
   assert.equal(calls, 2);
   assert.equal(refreshed.quote.remoteId, "poem-2");
   assert.equal(refreshed.source, "online");
   assert.equal(refreshed.context.season, context.season);
-  assert.equal(storage.data.history.at(-1), refreshed.quote.id);
+  assert.deepEqual(storage.data.history, [first.quoteId]);
 });
 
-test("Failed display refreshes never replace the visible poem with stale candidates or offline fallback", async () => {
+test("Failed preparation keeps displayed history intact and honors failure cooldowns", async () => {
   let calls = 0;
   const { controller, storage } = fixture({
     fetchImpl: async () => ++calls === 1
@@ -251,13 +270,23 @@ test("Failed display refreshes never replace the visible poem with stale candida
   const history = [...storage.data.history];
   for (let attempt = 0; attempt < 2; attempt++) {
     const refreshed = await controller.handle({
-      type: "select", refreshOnly: true, replaceCached: true, currentId: first.quoteId,
+      type: "select", prepareNext: true, currentId: first.quoteId,
     });
-    assert.equal(refreshed.status, "unavailable");
-    assert.equal(refreshed.quote, undefined);
+    assert.equal(refreshed, null);
     assert.deepEqual(storage.data.history, history);
   }
   assert.equal(calls, 2, "The second refresh respects the failure cooldown");
+});
+
+test("Offline preparation chooses a different bundled poem without fetching or changing history", async () => {
+  const storage = memory({ settings: { ...settings, onlineEnabled: false } });
+  const { controller } = fixture({ storage, fetchImpl: () => { throw new Error("Must not fetch"); } });
+  const first = await controller.handle({ type: "select" });
+  const history = [...storage.data.history];
+  const next = await controller.handle({ type: "select", prepareNext: true, currentId: first.quoteId });
+  assert.notEqual(next.quote.id, first.quoteId);
+  assert.equal(next.source, "offline");
+  assert.deepEqual(storage.data.history, history);
 });
 
 test("Candidate preloads include image URLs and video posters, never video streams", async () => {

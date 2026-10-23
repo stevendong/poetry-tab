@@ -21,6 +21,11 @@ try {
     localStorage.setItem("yijian:settings", JSON.stringify({
       onlineEnabled: false, language: "zh",
     }));
+    // Keep foreground animation/error checks independent of successful preloads
+    // that would otherwise let the browser reuse a decoded image in the error case.
+    const requestLock = navigator.locks.request.bind(navigator.locks);
+    navigator.locks.request = (name, ...args) => name === "yijian-prepare-next"
+      ? new Promise(() => {}) : requestLock(name, ...args);
     window.backgroundOpacities = [];
     new MutationObserver(() => {
       const art = document.getElementById("art");

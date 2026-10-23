@@ -70,53 +70,86 @@ async function launch() {
       }));
     Math.random = () => 0;
     Object.defineProperty(navigator, "connection", { value: { saveData: true } });
+    window.finishedPreparations = 0;
+    window.displayedQuotes = [];
+    new MutationObserver((records) => {
+      for (const record of records)
+        if (record.attributeName === "data-quote") window.displayedQuotes.push(record.target.dataset.quote);
+    }).observe(document, { subtree: true, attributes: true, attributeFilter: ["data-quote"] });
     let controller;
     chrome.runtime = {
       id: "display-cache-test",
       async sendMessage(message) {
         controller ||= Promise.all([import("/state.js"), import("/storage.js")])
           .then(([{ createStateController }, { storage }]) => createStateController(storage));
-        return { data: await (await controller).handle(message) };
+        try {
+          return { data: await (await controller).handle(message) };
+        } finally {
+          if (message.prepareNext) window.finishedPreparations++;
+        }
       },
     };
   }, { base });
   browser.on("page", (page) => page.on("pageerror", (error) => errors.push(error.message)));
 }
 
+async function ready(page) {
+  await page.waitForFunction(() => document.getElementById("poetry").getAttribute("aria-busy") === "false" &&
+    document.getElementById("art").classList.contains("loaded"));
+}
+
 async function open() {
   const page = await browser.newPage();
   await page.goto(base, { waitUntil: "domcontentloaded" });
-  await page.waitForFunction(() => document.getElementById("poetry").getAttribute("aria-busy") === "false" &&
-    document.getElementById("art").classList.contains("loaded"));
+  await ready(page);
   return page;
 }
 
-async function saved(page, id) {
-  await page.waitForFunction(async ({ config, id }) => {
-    const snapshot = await (await import("/display-cache.js")).readLastDisplay(config);
+async function saved(page, id, key = "next") {
+  await page.waitForFunction(async ({ config, id, key }) => {
+    const snapshot = await (await import("/display-cache.js")).readLastDisplay(config, key);
     return snapshot?.quote.remoteId === id && snapshot.imageData?.startsWith("data:image/");
-  }, { config, id });
+  }, { config, id, key });
 }
 
-async function resetCooldown(page) {
-  await page.evaluate(() => {
+async function resetPreparation(page) {
+  await page.evaluate(async () => {
     const pool = JSON.parse(localStorage.getItem("yijian:servicePoolState"));
+    pool.fetchedAt = Date.now() - 86400000;
     pool.retryAt = 0;
     localStorage.setItem("yijian:servicePoolState", JSON.stringify(pool));
+    await new Promise((resolve, reject) => {
+      const request = indexedDB.open("yijian-display", 1);
+      request.onsuccess = () => {
+        const db = request.result;
+        const transaction = db.transaction("display", "readwrite");
+        transaction.objectStore("display").delete("next");
+        transaction.oncomplete = () => { db.close(); resolve(); };
+        transaction.onerror = () => reject(transaction.error);
+      };
+      request.onerror = () => reject(request.error);
+    });
   });
 }
 
-async function frames(page) {
+async function steady(page, id) {
   await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  assert.equal(await page.locator("body").getAttribute("data-quote"), quoteId(id));
+  assert.deepEqual(await page.evaluate(() => [...new Set(window.displayedQuotes)]), [quoteId(id)],
+    "A warm tab must display one poem without an offline flash or an automatic replacement");
+  assert.match(await page.locator("#art").getAttribute("src"), /^data:image\//);
 }
 
 try {
   await launch();
-  items = [candidate("first")];
+  items = [candidate("first"), candidate("second", 1)];
   let page = await open();
-  await saved(page, "first");
-  const firstVerse = await page.locator("#verse").innerText();
-  // The API pool can expire; the last successful display has no time limit.
+  await saved(page, "first", "last");
+  await saved(page, "second");
+  assert.equal(await page.locator("body").getAttribute("data-quote"), quoteId("first"));
+  assert.deepEqual(await page.evaluate(() => [...new Set(window.displayedQuotes)]), [quoteId("first")],
+    "Cold startup should also display only one poem");
+  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem("yijian:history"))), [quoteId("first")]);
   await page.evaluate(() => {
     const pool = JSON.parse(localStorage.getItem("yijian:servicePoolState"));
     pool.fetchedAt = Date.now() - 86400000;
@@ -127,102 +160,105 @@ try {
   const http = await browser.newCDPSession(await browser.newPage());
   await http.send("Network.clearBrowserCache");
   failedImages.add("/media/first.webp");
+  failedImages.add("/media/second.webp");
   requests.length = 0;
   apiGate = gate();
-  items = [candidate("second", 1)];
+  items = [candidate("third", 2), candidate("fourth", 3), candidate("fifth", 4)];
   page = await open();
-  assert.equal(await page.locator("body").getAttribute("data-quote"), quoteId("first"));
-  assert.equal(await page.locator("#verse").innerText(), firstVerse);
-  assert.match(await page.locator("#art").getAttribute("src"), /^data:image\//);
-  assert(!requests.includes("/media/first.webp"), "Cached image bytes survive a browser restart and an empty HTTP cache");
-  console.log("PASS A restarted browser restores the exact last poem and image without contacting its image server");
+  await steady(page, "second");
+  assert(!requests.includes("/media/second.webp"), "The prepared image survives a browser restart and an empty HTTP cache");
+  console.log("PASS The first tab prepares its second poem; the next tab restores it immediately after a browser restart");
 
   imageGate = gate();
-  blockedImage = "/media/second.webp";
-  const downloading = page.waitForRequest(`${base}/media/second.webp`);
+  blockedImage = "/media/third.webp";
+  const downloading = page.waitForRequest(`${base}/media/third.webp`);
   apiGate.release();
   apiGate = null;
   await downloading;
-  await frames(page);
-  assert.equal(await page.locator("body").getAttribute("data-quote"), quoteId("first"));
-  assert.equal(await page.locator("#verse").innerText(), firstVerse);
-  assert.match(await page.locator("#art").getAttribute("src"), /^data:image\//);
-  await saved(page, "first");
+  await steady(page, "second");
   imageGate.release();
   imageGate = null;
-  await page.waitForFunction((id) => document.body.dataset.quote === id, quoteId("second"));
-  await saved(page, "second");
-  assert.notEqual(await page.locator("#verse").innerText(), firstVerse);
-  assert.equal(await page.locator("#art").getAttribute("src"), `${base}/media/second.webp`);
-  console.log("PASS The old poem and background remain visible until the new image decodes, then both update and persist");
+  await saved(page, "third");
+  await steady(page, "second");
+  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem("yijian:history"))),
+    [quoteId("first"), quoteId("second")], "Preparing a poem must not mark it as already shown");
+  const thirdRequests = requests.filter((request) => request === "/media/third.webp").length;
+  const third = await open();
+  await saved(third, "fourth");
+  await steady(third, "third");
+  assert.equal(requests.filter((request) => request === "/media/third.webp").length, thirdRequests);
+  await steady(page, "second");
+  console.log("PASS Completing background preparation never changes an open tab; the following tab uses the prepared poem and image");
+
+  imageGate = gate();
+  blockedImage = "/media/fifth.webp";
+  const fourth = await browser.newPage();
+  const fifthDownload = fourth.waitForRequest(`${base}/media/fifth.webp`);
+  await fourth.goto(base, { waitUntil: "domcontentloaded" });
+  await ready(fourth);
+  await fifthDownload;
+  const rapid = await Promise.all([open(), open()]);
+  for (const tab of [fourth, ...rapid]) await steady(tab, "fourth");
+  imageGate.release();
+  imageGate = null;
+  await saved(fourth, "fifth");
+  for (const tab of rapid) await steady(tab, "fourth");
+  console.log("PASS Rapid concurrent tabs use an immediate fallback while one shared preparation fills the next slot");
+  for (const tab of browser.pages()) if (tab !== fourth) await tab.close();
+  page = fourth;
 
   for (const failure of [500, 429, "empty"]) {
-    await resetCooldown(page);
+    await resetPreparation(page);
     await page.close();
     apiStatus = typeof failure === "number" ? failure : 200;
     items = [];
     page = await open();
-    await page.waitForFunction(() => JSON.parse(localStorage.getItem("yijian:servicePoolState")).retryAt > Date.now());
-    await frames(page);
-    assert.equal(await page.locator("body").getAttribute("data-quote"), quoteId("second"));
-    assert.match(await page.locator("#art").getAttribute("src"), /^data:image\//);
-    await saved(page, "second");
+    await page.waitForFunction(() => window.finishedPreparations > 0);
+    await steady(page, "fourth");
     const count = requests.filter((request) => request === "api").length;
     const another = await open();
-    await frames(another);
-    assert.equal(requests.filter((request) => request === "api").length, count,
-      "Cached startup must still honor API failure cooldowns");
+    await another.waitForFunction(() => window.finishedPreparations > 0);
+    await steady(another, "fourth");
+    assert.equal(requests.filter((request) => request === "api").length, count);
     await another.close();
   }
-  console.log("PASS Outages, rate limits and empty results preserve the successful display and honor retry cooldowns");
+  console.log("PASS Failed, rate-limited and empty preparations keep cached startup available and honor retry cooldowns");
 
-  await resetCooldown(page);
+  await resetPreparation(page);
   await page.close();
   apiStatus = 200;
-  items = [candidate("broken", 2)];
+  items = [candidate("broken", 5)];
   failedImages.add("/media/broken.webp");
-  const brokenPage = await browser.newPage();
-  const brokenImage = brokenPage.waitForResponse(`${base}/media/broken.webp`);
-  await brokenPage.goto(base, { waitUntil: "domcontentloaded" });
-  await brokenImage;
-  await frames(brokenPage);
-  assert.equal(await brokenPage.locator("body").getAttribute("data-quote"), quoteId("second"));
-  assert.match(await brokenPage.locator("#art").getAttribute("src"), /^data:image\//);
-  await saved(brokenPage, "second");
-  await brokenPage.close();
-  console.log("PASS A successful poem response with a broken image cannot replace or poison the previous cache");
-
-  apiGate = gate();
-  items = [candidate("late", 3)];
-  page = await open();
-  await page.locator("#read-button").click();
-  const response = page.waitForResponse((response) => response.url().includes("/api/v1/candidates"));
-  apiGate.release();
-  apiGate = null;
-  await response;
-  await frames(page);
-  assert.equal(await page.locator("body").getAttribute("data-quote"), quoteId("second"));
-  await saved(page, "second");
-  console.log("PASS Opening a poem for reading prevents a late startup refresh from replacing it");
-
-  await page.close();
-  items = [candidate("slow-refresh", 4), candidate("manual-next", 5)];
-  imageGate = gate();
-  blockedImage = "/media/slow-refresh.webp";
   page = await browser.newPage();
-  const slowRefresh = page.waitForRequest(`${base}/media/slow-refresh.webp`);
+  const broken = page.waitForResponse(`${base}/media/broken.webp`);
   await page.goto(base, { waitUntil: "domcontentloaded" });
-  await slowRefresh;
+  await ready(page);
+  await broken;
+  await steady(page, "fourth");
+  assert.equal(await page.evaluate(async (config) =>
+    (await import("/display-cache.js")).readLastDisplay(config, "next"), config), null);
+  await saved(page, "fourth", "last");
+  console.log("PASS A broken second image cannot become the next startup cache or replace the current display");
+
+  await resetPreparation(page);
+  await page.close();
+  items = [candidate("slow-next", 6)];
+  imageGate = gate();
+  blockedImage = "/media/slow-next.webp";
+  page = await browser.newPage();
+  const slow = page.waitForRequest(`${base}/media/slow-next.webp`);
+  await page.goto(base, { waitUntil: "domcontentloaded" });
+  await ready(page);
+  await slow;
+  items = [candidate("manual", 7), candidate("after-manual", 8)];
+  await resetPreparation(page);
   await page.locator("#next-button").click();
-  await saved(page, "manual-next");
+  await saved(page, "manual", "last");
   imageGate.release();
   imageGate = null;
-  await page.waitForFunction(() => performance.getEntriesByType("resource").some((entry) =>
-    entry.name.endsWith("/media/slow-refresh.webp")));
-  await frames(page);
-  assert.equal(await page.locator("body").getAttribute("data-quote"), quoteId("manual-next"));
-  await saved(page, "manual-next");
-  console.log("PASS Manual switching wins over a startup refresh whose image finishes later");
+  await saved(page, "after-manual");
+  assert.equal(await page.locator("body").getAttribute("data-quote"), quoteId("manual"));
+  console.log("PASS Manual switching cancels stale preparation and prepares a successor for the newly selected poem");
 
   await page.evaluate(() => {
     localStorage.setItem("yijian:settings", JSON.stringify({ onlineEnabled: false, language: "zh" }));
@@ -232,7 +268,7 @@ try {
   const offlineId = await offline.locator("body").getAttribute("data-quote");
   assert(!offlineId.startsWith("custom:"));
   assert.match(await offline.locator("#art").getAttribute("src"), /^assets\/art\//);
-  console.log("PASS Changing source settings or disabling online recommendations does not restore an incompatible display");
+  console.log("PASS Source changes and offline mode reject incompatible prepared poems");
   assert.deepEqual(errors, []);
 } finally {
   releases.forEach((release) => release());

@@ -32,13 +32,7 @@ export function backgroundSource(quote, onlineEnabled) {
     : null;
 }
 
-export async function readLastDisplay(configKey) {
-  const db = await openDatabase();
-  const saved = await new Promise((resolve, reject) => {
-    const request = db.transaction("display").objectStore("display").get("last");
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
+function restoreDisplay(saved, configKey) {
   if (saved?.configKey !== configKey) return null;
   const quote = QUOTES.find((quote) => quote.id === saved.quote?.id) ||
     restoreCustom(saved.quote) || restoreOnline(saved.quote);
@@ -46,9 +40,46 @@ export async function readLastDisplay(configKey) {
   return { ...saved, quote };
 }
 
-export async function saveLastDisplay(snapshot, isCurrent) {
-  // Keep image bytes outside chrome.storage's small JSON quota. Only the last
-  // successful display is retained, so this does not grow with the candidate pool.
+export async function readLastDisplay(configKey, key = "last") {
+  const db = await openDatabase();
+  const saved = await new Promise((resolve, reject) => {
+    const request = db.transaction("display").objectStore("display").get(key);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  return restoreDisplay(saved, configKey);
+}
+
+export async function takeNextDisplay(configKey) {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction("display", "readwrite");
+    const store = transaction.objectStore("display");
+    const request = store.get("next");
+    let snapshot = null;
+    let fromNext = false;
+    request.onsuccess = () => {
+      snapshot = restoreDisplay(request.result, configKey);
+      if (snapshot) {
+        fromNext = true;
+        // Consume and promote together so simultaneous tabs cannot claim the
+        // same prepared entry; the last display remains an immediate fallback.
+        store.delete("next");
+        store.put({ ...snapshot, savedAt: Date.now() }, "last");
+      } else {
+        const fallback = store.get("last");
+        fallback.onsuccess = () => { snapshot = restoreDisplay(fallback.result, configKey); };
+      }
+    };
+    transaction.oncomplete = () => resolve(snapshot ? { ...snapshot, fromNext } : null);
+    transaction.onerror = () => reject(transaction.error);
+    transaction.onabort = () => reject(transaction.error);
+  });
+}
+
+export async function saveLastDisplay(snapshot, isCurrent, key = "last") {
+  // Keep only the current fallback and one prepared poem, with image bytes
+  // outside chrome.storage's small JSON quota.
   let imageData = snapshot.imageData || null;
   if (snapshot.src?.startsWith("http") && !imageData) {
     try {
@@ -79,11 +110,11 @@ export async function saveLastDisplay(snapshot, isCurrent) {
   await new Promise((resolve, reject) => {
     const transaction = db.transaction("display", "readwrite");
     const store = transaction.objectStore("display");
-    const request = store.get("last");
+    const request = store.get(key);
     request.onsuccess = () => {
       // A slow image copy in an older tab must not overwrite a newer success.
       if (isCurrent() && (request.result?.savedAt || 0) <= snapshot.savedAt)
-        store.put({ ...snapshot, imageData }, "last");
+        store.put({ ...snapshot, imageData }, key);
     };
     transaction.oncomplete = resolve;
     transaction.onerror = () => reject(transaction.error);
