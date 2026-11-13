@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { createProviderClient } from "../extension/provider-client.js";
 import { createStateController } from "../extension/state.js";
 import { candidatesRequest } from "../extension/service-client.js";
-import { retryAfterMs } from "../extension/custom.js";
+import { retryAfterMs, normalizeCustom } from "../extension/custom.js";
 import { getContext } from "../extension/context.js";
 import { sanitizeSettings } from "../extension/storage.js";
 
@@ -209,7 +209,7 @@ test("Startup rejects expired, mismatched, disabled and unauthorized caches with
   for (const override of [
     { onlineEnabled: false }, { serviceUrl: "https://different.example" },
     { provider: "custom", customUrl: settings.serviceUrl },
-    { mediaPreference: "video" }, { hemisphere: "south" },
+    { mediaPreference: "video" }, { videoOnly: true }, { hemisphere: "south" },
   ]) {
     storage.data.settings = { ...settings, ...override };
     assert.equal(await controller.handle({ type: "select", cacheOnly: true }), null);
@@ -526,4 +526,51 @@ test("Generic custom APIs also retain 429 status and accept bounded numeric or d
   assert.equal(retryAfterMs(null, clock), 60000);
   assert.equal(retryAfterMs("0", clock), 1000);
   assert.equal(retryAfterMs("99999999", clock), 3600000);
+});
+
+test("Video-only pools invalidate image caches and reject missing, inactive or unsafe videos", async () => {
+  const urls = [];
+  const video = (id, media = {}) => ({
+    ...quote(id), media: [{ type: "video", url: `/${id}.mp4`, ...media }],
+  });
+  const { client, storage } = fixture({
+    fetchImpl: async (url) => {
+      urls.push(new URL(url));
+      return response([
+        quote("image"), video("video"), video("inactive", { active: false }),
+        video("unsafe", { url: "javascript:alert(1)" }),
+      ]);
+    },
+  });
+  await client.get(context, settings);
+  const filtered = { ...settings, videoOnly: true };
+  assert.deepEqual((await client.get(context, filtered, { cacheOnly: true })).quotes, []);
+  const result = await client.get(context, filtered);
+  assert.equal(urls.length, 2);
+  assert.equal(urls[1].searchParams.get("videoOnly"), "true");
+  assert.deepEqual(result.quotes.map((q) => q.remoteId), ["video"]);
+  assert.equal(result.quotes[0].media.type, "video");
+  assert.equal(result.quotes[0].media.posterUrl, "https://poetry.example/art.webp");
+  storage.data.servicePoolState.items.push(normalizeCustom(quote("old-image"), settings));
+  assert.deepEqual((await client.get(context, filtered, { cacheOnly: true })).quotes.map((q) => q.remoteId), ["video"]);
+  await client.get(context, settings);
+  assert.equal(urls.length, 3);
+  assert.equal(urls[2].searchParams.has("videoOnly"), false);
+});
+
+test("Video-only empty results keep the offline fallback and a changed filter discards in-flight selections", async () => {
+  const { controller, storage } = fixture({ fetchImpl: async () => response([quote("image")]) });
+  storage.data.settings = { ...settings, videoOnly: true };
+  const result = await controller.handle({ type: "select" });
+  assert.equal(result.status, "empty");
+  assert.equal(result.source, "offline");
+
+  let release;
+  const pending = new Promise((resolve) => { release = resolve; });
+  const stale = fixture({ fetchImpl: () => pending });
+  const selection = stale.controller.handle({ type: "select" });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  stale.storage.data.settings = { ...settings, videoOnly: true };
+  release(response([quote("old-image")]));
+  assert.equal((await selection).source, "offline");
 });

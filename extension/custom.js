@@ -176,6 +176,8 @@ export function customRequest(settings, context, exclusions = []) {
     if (context.hemisphere !== "south" && context.term)
       url.searchParams.set("term", context.term);
     url.searchParams.set("prefer", settings.mediaPreference || "image");
+    url.searchParams.delete("videoOnly");
+    if (settings.videoOnly) url.searchParams.set("videoOnly", "true");
     url.searchParams.delete("exclude");
     if (exclusions.length)
       url.searchParams.set("exclude", exclusions.slice(-6).join(","));

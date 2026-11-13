@@ -69,6 +69,10 @@
 
 默认连接 poetry-service 诗画库（`https://poetry-api.nabulalogic.com`），无需手动配置。也可在设置中切换今日诗词或填写自定义 JSON 地址，点击「保存接口并连接」；其他自定义站点需允许访问。已保存的来源选择会保留。poetry-service 可填写服务根地址或完整推荐接口；自定义 JSON 支持 `content`（或 `lines`）、`title`、`author`，可附带 `fullText`、`meaning`、`appreciation`、`imageUrl` 或 `videoUrl` + `posterUrl`。详细协议与验收记录以 [Notion 项目页面](https://www.notion.so/3f92dbec685c81fa87bbf6bf606e2844) 为准。
 
+诗画库来源支持「仅随机有视频的诗词」，点击「保存接口并连接」后生效。开启后在线随机推荐仅使用带有效视频的诗词，并显示视频背景；无结果或接口不可用时仍使用离线精选。该设置不影响指定 ID 加载、今日诗词及自定义 JSON 来源。
+
+接口请求 `/api/v1/recommendation` 和 `/api/v1/candidates` 支持可选参数 `videoOnly=true`，用于仅返回有视频的诗词；关闭时省略该参数。`prefer=video` 仍表示背景偏好，不等同于仅返回有视频的诗词。
+
 ## 数据与隐私
 
 - 扩展使用 `storage`，默认联网权限覆盖诗画库官方接口和今日诗词。其他自定义 HTTP/HTTPS 站点通过可选权限声明，在点击保存时按站点申请；不会在安装时要求所有网站访问权限。

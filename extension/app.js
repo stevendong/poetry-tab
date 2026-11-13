@@ -146,12 +146,14 @@ function syncApiSettings() {
   $("api-url").value =
     settings.provider === "service" ? settings.serviceUrl : settings.customUrl;
   $("media-preference").value = settings.mediaPreference;
+  $("video-only").checked = settings.videoOnly;
   showApiFields();
   if (apiStatusKey) $("api-status").textContent = t(apiStatusKey);
 }
 function showApiFields() {
   const provider = $("api-provider").value;
   $("api-details").hidden = provider === "jinrishici";
+  $("video-only-row").hidden = provider !== "service";
   $("api-help").textContent = t(
     provider === "service" ? "serviceHelp" : "customHelp",
   );
@@ -181,7 +183,10 @@ $("api-provider").addEventListener("change", () => {
 });
 $("save-api").addEventListener("click", async () => {
   const provider = $("api-provider").value;
-  const config = { provider, mediaPreference: $("media-preference").value };
+  const config = {
+    provider, mediaPreference: $("media-preference").value,
+    videoOnly: $("video-only").checked,
+  };
   if (provider !== "jinrishici")
     config[provider === "service" ? "serviceUrl" : "customUrl"] =
       $("api-url").value.trim();

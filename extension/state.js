@@ -101,6 +101,7 @@ export function createStateController(
             latest.serviceUrl !== settings.serviceUrl ||
             latest.customUrl !== settings.customUrl ||
             latest.mediaPreference !== settings.mediaPreference ||
+            latest.videoOnly !== settings.videoOnly ||
             latest.hemisphere !== settings.hemisphere ||
             currentContext.season !== context.season ||
             currentContext.period !== context.period ||

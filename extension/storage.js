@@ -6,6 +6,7 @@ export const DEFAULT_SETTINGS = {
   serviceUrl: SERVICE_URL,
   customUrl: "",
   mediaPreference: "image",
+  videoOnly: false,
   hemisphere: "north",
   showClock: true,
   showMeaning: false,
@@ -25,6 +26,7 @@ export function sanitizeSettings(value = {}) {
     serviceUrl: httpUrl(value.serviceUrl) || SERVICE_URL,
     customUrl: httpUrl(value.customUrl) || "",
     mediaPreference: value.mediaPreference === "video" ? "video" : "image",
+    videoOnly: value.videoOnly === true,
     onlineEnabled:
       typeof value.onlineEnabled === "boolean" ? value.onlineEnabled : true,
     hemisphere: value.hemisphere === "south" ? "south" : "north",

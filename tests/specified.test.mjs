@@ -38,7 +38,7 @@ function fixture(options = {}) {
 
 test("Quotation URLs preserve deployment prefixes and tenant query without recommendation filters", () => {
   const url = new URL(quotationRequest({ ...settings,
-    serviceUrl: "https://poetry.example/deploy/api/v1/recommendation?tenant=one&season=autumn&limit=10",
+    serviceUrl: "https://poetry.example/deploy/api/v1/recommendation?tenant=one&season=autumn&limit=10&videoOnly=true",
   }, "some-ID_123"));
   assert.equal(url.pathname, "/deploy/api/v1/quotations/some-ID_123");
   assert.equal(url.search, "?tenant=one");
@@ -169,4 +169,12 @@ test("Disabling online access or changing service settings discards a late expli
     assert.equal((await result).status, change.onlineEnabled === false ? "disabled" : "changed");
     assert.deepEqual(storage.data.history, ["old"]);
   }
+});
+
+test("Video-only random setting does not restrict explicit loads or override their background preference", async () => {
+  const { controller, storage } = fixture();
+  storage.data.settings.videoOnly = true;
+  const result = await controller.handle({ type: "load", id: "specific-id" });
+  assert.equal(result.status, "loaded");
+  assert.equal(result.quote.media.type, "image");
 });

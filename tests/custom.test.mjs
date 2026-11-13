@@ -57,6 +57,10 @@ function memory(initial = {}) {
 }
 
 test("settings default to Poetry Service and preserve explicitly selected providers", () => {
+  assert.equal(DEFAULT_SETTINGS.videoOnly, false);
+  assert.equal(sanitizeSettings({ videoOnly: true }).videoOnly, true);
+  for (const videoOnly of [undefined, null, false, "true", 1])
+    assert.equal(sanitizeSettings({ videoOnly }).videoOnly, false);
   assert.equal(DEFAULT_SETTINGS.provider, "service");
   for (const value of [undefined, null, {}, { provider: "invalid" }]) {
     const settings = sanitizeSettings(value);
@@ -118,6 +122,15 @@ test("service recommendation uses time context, preference and exclusions; south
     provider: "custom",
     customUrl: "https://p.test/random?lang=zh",
   };
+  assert.equal(customRequest(custom, context), custom.customUrl);
+});
+test("video-only recommendation filter is explicit and leaves generic custom URLs unchanged", () => {
+  assert.equal(new URL(customRequest({ ...settings, videoOnly: true }, context)).searchParams.get("videoOnly"), "true");
+  const staleUrl = { ...settings, serviceUrl: settings.serviceUrl + "?videoOnly=true&tenant=one" };
+  const url = new URL(customRequest(staleUrl, context));
+  assert.equal(url.searchParams.has("videoOnly"), false);
+  assert.equal(url.searchParams.get("tenant"), "one");
+  const custom = { provider: "custom", customUrl: "https://p.test/random", videoOnly: true };
   assert.equal(customRequest(custom, context), custom.customUrl);
 });
 test("service adapters keep full work, interpretations and selected image or video", () => {

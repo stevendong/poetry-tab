@@ -123,14 +123,18 @@ try {
   assert.equal((await savedSettings(page)).provider, "jinrishici");
   console.log("PASS Failed storage write does not leak an unsaved API into later settings changes");
 
+  await page.locator("#api-provider").selectOption("service");
+  await page.locator("#video-only").check();
   assert.match(await save(page), /接口已保存/);
   assert.equal((await savedSettings(page)).provider, "service");
+  assert.equal((await savedSettings(page)).videoOnly, true);
   await page.reload();
   await page.waitForFunction(() =>
     document.getElementById("poetry")?.getAttribute("aria-busy") === "false",
   );
   await page.locator("#settings-button").click();
   assert.equal(await page.locator("#api-provider").inputValue(), "service");
+  assert.equal(await page.locator("#video-only").isChecked(), true);
   await page.evaluate(() => {
     chrome.permissions.request = async () => {
       throw new Error("Jinrishici must not request optional permissions");
@@ -138,6 +142,7 @@ try {
   });
   assert.match(await save(page, "jinrishici"), /接口已保存/);
   assert.equal((await savedSettings(page)).provider, "jinrishici");
+  assert.equal(await page.locator("#video-only").isVisible(), false);
   console.log("PASS Granted API configuration persists across reload; Jinrishici needs no optional grant");
 
   const worker = browser.serviceWorkers()[0];
@@ -166,7 +171,8 @@ try {
   );
   assert.match(await page.locator("#content-source").innerText(), /诗画库/);
   const requests = await worker.evaluate(() => globalThis.__defaultApiRequests);
-  assert.equal(requests.length, 1);
+  // Preparing the next display may refresh a pool containing only the current poem.
+  assert.ok(requests.length >= 1 && requests.length <= 2);
   const request = new URL(requests[0]);
   assert.equal(request.origin, "https://poetry-api.nabulalogic.com");
   assert.equal(request.pathname, "/api/v1/candidates");
@@ -175,6 +181,11 @@ try {
   await page.locator("#settings-button").click();
   assert.equal(await page.locator("#api-provider").inputValue(), "service");
   assert.match(await save(page), /接口连接成功|接口内容重复/);
+  await page.locator("#video-only").check();
+  assert.match(await save(page), /暂无已发布内容/);
+  assert.equal((await savedSettings(page)).videoOnly, true);
+  const filteredRequests = await worker.evaluate(() => globalThis.__defaultApiRequests);
+  assert.ok(filteredRequests.some((url) => new URL(url).searchParams.get("videoOnly") === "true"));
   console.log("PASS Fresh settings use Poetry Service with real manifest permission and no optional grant prompt");
   assert.deepEqual(errors, []);
 } finally {

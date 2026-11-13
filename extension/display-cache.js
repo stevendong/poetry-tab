@@ -7,7 +7,7 @@ let database;
 export function displayConfigKey(settings) {
   return JSON.stringify([
     settings.onlineEnabled, settings.provider, settings.serviceUrl,
-    settings.customUrl, settings.mediaPreference, settings.hemisphere,
+    settings.customUrl, settings.mediaPreference, settings.hemisphere, settings.videoOnly === true,
   ]);
 }
 

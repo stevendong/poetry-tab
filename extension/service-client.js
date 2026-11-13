@@ -24,7 +24,7 @@ export function quotationRequest(settings, id) {
   if (!validQuotationId(id)) throw new Error("Invalid quotation ID");
   const url = new URL(endpointFor({ ...settings, provider: "service" }));
   url.pathname = url.pathname.replace(/\/recommendation$/, `/quotations/${id}`);
-  for (const key of ["season", "period", "term", "prefer", "exclude", "limit"])
+  for (const key of ["season", "period", "term", "prefer", "exclude", "limit", "videoOnly"])
     url.searchParams.delete(key);
   return url.href;
 }
@@ -42,7 +42,7 @@ function normalizeServiceQuote(quote, settings) {
     ? { ...media, posterUrl: image?.url || httpUrl(media.posterUrl, endpoint) }
     : media;
   const preferred = available.map(withPoster).find((media) =>
-    media.type === (settings.mediaPreference || "image") &&
+    media.type === (settings.videoOnly ? "video" : settings.mediaPreference || "image") &&
     (media.type === "image" || media.posterUrl),
   );
   return normalizeCustom({ quote: { ...quote, background: preferred || withPoster(quote.background) } }, settings);
@@ -75,7 +75,7 @@ export function createServiceClient(
   return {
     async load(id, settings) {
       if (!validQuotationId(id)) return { status: "invalid_id" };
-      const config = { ...settings, provider: "service" };
+      const config = { ...settings, provider: "service", videoOnly: false };
       let url;
       try {
         url = quotationRequest(config, id);
@@ -113,6 +113,7 @@ export function createServiceClient(
       const key = JSON.stringify([
         endpoint,
         settings.mediaPreference,
+        settings.videoOnly === true,
         context.season,
         context.period,
         context.hemisphere,
@@ -131,7 +132,8 @@ export function createServiceClient(
                 .map(restoreCustom)
                 .filter(
                   (q) =>
-                    q?.endpoint === endpoint && q.apiProvider === "service",
+                    q?.endpoint === endpoint && q.apiProvider === "service" &&
+                    (!settings.videoOnly || q.media?.type === "video"),
                 )
             : [];
         const stale = age >= 0 && age < 600000 ? items : [];
@@ -166,7 +168,9 @@ export function createServiceClient(
           const data = await readJson(response, 1048576);
           if (!Array.isArray(data?.items))
             throw new Error("Invalid candidates");
-          const quotes = data.items.slice(0, 10).map((quote) => normalizeServiceQuote(quote, settings));
+          const quotes = data.items.slice(0, 10)
+            .map((quote) => normalizeServiceQuote(quote, settings))
+            .filter((quote) => !settings.videoOnly || quote.media?.type === "video");
           await storage.set("servicePoolState", {
             key,
             items: quotes,
